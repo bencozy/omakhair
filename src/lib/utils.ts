@@ -36,17 +36,50 @@ export function getServiceById(id: string): Service | undefined {
   return getServices().find(service => service.id === id)
 }
 
-export function calculateTotalDuration(serviceIds: string[]): number {
+export function calculateTotalDuration(serviceIds: string[], selectedAddons: { [serviceId: string]: string[] } = {}): number {
   const services = serviceIds.map(id => getServiceById(id)).filter(Boolean) as Service[]
-  return services.reduce((total, service) => total + service.duration, 0)
+  
+  return services.reduce((total, service) => {
+    let serviceDuration = service.duration
+    
+    // Add addon durations
+    const addons = selectedAddons[service.id] || []
+    addons.forEach(addonId => {
+      const addon = service.addons?.find(a => a.id === addonId)
+      if (addon) {
+        serviceDuration += addon.duration
+      }
+    })
+    
+    return total + serviceDuration
+  }, 0)
 }
 
-export function calculateTotalPrice(serviceIds: string[]): number {
+export function calculateTotalPrice(serviceIds: string[], selectedAddons: { [serviceId: string]: string[] } = {}): number {
   const services = serviceIds.map(id => getServiceById(id)).filter(Boolean) as Service[]
-  return services.reduce((total, service) => total + service.price, 0)
+  
+  return services.reduce((total, service) => {
+    let serviceTotal = service.price
+    
+    // Add addon prices
+    const addons = selectedAddons[service.id] || []
+    addons.forEach(addonId => {
+      const addon = service.addons?.find(a => a.id === addonId)
+      if (addon) {
+        serviceTotal += addon.price
+      }
+    })
+    
+    return total + serviceTotal
+  }, 0)
 }
 
-export function generateTimeSlots(date: Date, existingBookings: Booking[] = []): TimeSlot[] {
+export function generateTimeSlots(
+  date: Date, 
+  existingBookings: Booking[] = [], 
+  selectedServiceIds: string[] = [], 
+  selectedAddons: { [serviceId: string]: string[] } = {}
+): TimeSlot[] {
   const dayOfWeek = format(date, 'EEEE').toLowerCase()
   const businessHours = servicesData.businessHours[dayOfWeek as keyof typeof servicesData.businessHours]
   
@@ -64,38 +97,91 @@ export function generateTimeSlots(date: Date, existingBookings: Booking[] = []):
   const closeTime = new Date(date)
   closeTime.setHours(closeHour, closeMinute, 0, 0)
   
-  // Generate slots every 2 hours (120 minutes)
+  // Get settings
+  const settings = servicesData.settings
+  
+  // Filter bookings to only those on the selected date
+  const todaysBookings = existingBookings.filter(booking => 
+    isSameDay(booking.appointmentDate, date)
+  )
+  
+  // Calculate total duration for the services being booked (in minutes)
+  const requestedDuration = calculateTotalDuration(selectedServiceIds, selectedAddons)
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Time slot generation debug:', {
+      selectedDate: format(date, 'yyyy-MM-dd'),
+      dayOfWeek,
+      businessHours,
+      totalExistingBookings: existingBookings.length,
+      todaysBookingsCount: todaysBookings.length,
+      todaysBookings: todaysBookings.map(b => ({
+        id: b.id,
+        date: format(b.appointmentDate, 'yyyy-MM-dd'),
+        time: `${b.startTime}-${b.endTime}`
+      })),
+      requestedDuration,
+      selectedServiceIds
+    })
+  }
+  
+  // Generate slots every 30 minutes
   while (isBefore(currentTime, closeTime)) {
     const timeString = format(currentTime, 'HH:mm')
+    let isAvailable = true
+    let conflictingBooking: Booking | undefined
     
-    // Check if this time slot conflicts with existing bookings
-    const isBooked = existingBookings.some(booking => {
-      if (!isSameDay(booking.appointmentDate, date)) return false
+    // ONLY CHECK FOR ACTUAL BOOKING CONFLICTS
+    if (requestedDuration > 0) {
+      // If services are selected, check if the full service duration would conflict
+      const serviceEndTime = addMinutes(currentTime, requestedDuration)
       
-      const bookingStart = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.startTime}`)
-      const bookingEnd = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.endTime}`)
+      // Only block if service would end after business hours
+      if (isAfter(serviceEndTime, closeTime)) {
+        isAvailable = false
+      } else {
+        // Check for conflicts with existing bookings on this day
+        conflictingBooking = todaysBookings.find(booking => {
+          const bookingStart = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.startTime}`)
+          const bookingEnd = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.endTime}`)
+          
+          // Check if our proposed service time would overlap with this booking
+          // Overlap occurs if: our start < their end AND our end > their start
+          return (
+            isBefore(currentTime, bookingEnd) && isAfter(serviceEndTime, bookingStart)
+          )
+        })
+        
+        if (conflictingBooking) {
+          isAvailable = false
+        }
+      }
+    } else {
+      // If no services selected, only block if this exact slot is within an existing booking
+      conflictingBooking = todaysBookings.find(booking => {
+        const bookingStart = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.startTime}`)
+        const bookingEnd = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.endTime}`)
+        
+        // Check if this specific 30-minute slot falls within an existing booking
+        return (
+          (isAfter(currentTime, bookingStart) || currentTime.getTime() === bookingStart.getTime()) &&
+          isBefore(currentTime, bookingEnd)
+        )
+      })
       
-      // Add 2-hour buffer (120 minutes) before and after each booking
-      const bufferStart = addMinutes(bookingStart, -120)
-      const bufferEnd = addMinutes(bookingEnd, 120)
-      
-      return (
-        (isAfter(currentTime, bufferStart) && isBefore(currentTime, bookingEnd)) ||
-        (isAfter(currentTime, bookingStart) && isBefore(currentTime, bufferEnd))
-      )
-    })
+      if (conflictingBooking) {
+        isAvailable = false
+      }
+    }
     
     slots.push({
       time: timeString,
-      available: !isBooked,
-      bookingId: isBooked ? existingBookings.find(b => 
-        isSameDay(b.appointmentDate, date) && 
-        b.startTime <= timeString && 
-        b.endTime > timeString
-      )?.id : undefined
+      available: isAvailable,
+      bookingId: conflictingBooking?.id
     })
     
-    currentTime = addMinutes(currentTime, 120) // 2 hours apart
+    currentTime = addMinutes(currentTime, 30) // 30-minute intervals
   }
   
   return slots

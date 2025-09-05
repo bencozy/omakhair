@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid services selected' }, { status: 400 });
     }
 
-    // Calculate pricing and duration
-    const totalPrice = calculateTotalPrice(formData.selectedServices);
-    const totalDuration = calculateTotalDuration(formData.selectedServices);
+    // Calculate pricing and duration including addons
+    const totalPrice = calculateTotalPrice(formData.selectedServices, formData.selectedAddons);
+    const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons);
 
     // Calculate end time
     const [hours, minutes] = formData.selectedTime.split(':').map(Number);

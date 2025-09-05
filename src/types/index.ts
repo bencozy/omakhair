@@ -1,3 +1,11 @@
+export interface ServiceAddon {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: number; // additional time in minutes
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -6,6 +14,11 @@ export interface Service {
   price: number;
   category: 'hair' | 'makeup' | 'combo';
   image?: string;
+  requirements?: string[];
+  includes?: string[];
+  popular?: boolean;
+  premium?: boolean;
+  addons?: ServiceAddon[];
 }
 
 export interface Customer {
@@ -48,6 +61,7 @@ export interface BookingFormData {
   email: string;
   phone: string;
   selectedServices: string[];
+  selectedAddons: { [serviceId: string]: string[] }; // serviceId -> addonIds[]
   appointmentDate: Date;
   selectedTime: string;
   notes?: string;

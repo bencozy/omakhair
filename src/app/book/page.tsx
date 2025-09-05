@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle } from 'lucide-react';
 import Calendar from 'react-calendar';
 import { format, addDays, startOfToday } from 'date-fns';
-import { ServiceCard } from '@/components/ServiceCard';
+import { ServiceList } from '@/components/ServiceList';
 import { BookingFormData, TimeSlot, Booking } from '@/types';
 import { 
   getServices, 
@@ -26,6 +26,7 @@ export default function BookPage() {
     email: '',
     phone: '',
     selectedServices: [],
+    selectedAddons: {},
     appointmentDate: new Date(),
     selectedTime: '',
     notes: ''
@@ -38,8 +39,8 @@ export default function BookPage() {
 
   const services = getServices();
   const selectedServices = services.filter(service => formData.selectedServices.includes(service.id));
-  const totalPrice = calculateTotalPrice(formData.selectedServices);
-  const totalDuration = calculateTotalDuration(formData.selectedServices);
+  const totalPrice = calculateTotalPrice(formData.selectedServices, formData.selectedAddons);
+  const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons);
 
   // Load existing bookings from localStorage
   useEffect(() => {
@@ -51,7 +52,11 @@ export default function BookPage() {
         createdAt: new Date(booking.createdAt),
         updatedAt: new Date(booking.updatedAt)
       }));
+      console.log('Loaded bookings:', bookings);
       setExistingBookings(bookings);
+    } else {
+      console.log('No bookings found in localStorage');
+      setExistingBookings([]);
     }
   }, []);
 
@@ -61,22 +66,56 @@ export default function BookPage() {
       setLoadingSlots(true);
       // Add a small delay to show loading state
       const timeoutId = setTimeout(() => {
-        const slots = generateTimeSlots(formData.appointmentDate, existingBookings);
+        const slots = generateTimeSlots(
+        formData.appointmentDate, 
+        existingBookings, 
+        formData.selectedServices, 
+        formData.selectedAddons
+      );
         setAvailableSlots(slots);
         setLoadingSlots(false);
       }, 300);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [formData.appointmentDate, existingBookings]);
+  }, [formData.appointmentDate, existingBookings, formData.selectedServices, formData.selectedAddons]);
 
   const handleServiceToggle = (serviceId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedServices: prev.selectedServices.includes(serviceId)
+    setFormData(prev => {
+      const isRemoving = prev.selectedServices.includes(serviceId);
+      const newSelectedServices = isRemoving
         ? prev.selectedServices.filter(id => id !== serviceId)
-        : [...prev.selectedServices, serviceId]
-    }));
+        : [...prev.selectedServices, serviceId];
+      
+      // If removing service, also remove its addons
+      const newSelectedAddons = { ...prev.selectedAddons };
+      if (isRemoving) {
+        delete newSelectedAddons[serviceId];
+      }
+      
+      return {
+        ...prev,
+        selectedServices: newSelectedServices,
+        selectedAddons: newSelectedAddons
+      };
+    });
+  };
+
+  const handleAddonToggle = (serviceId: string, addonId: string) => {
+    setFormData(prev => {
+      const currentAddons = prev.selectedAddons[serviceId] || [];
+      const newAddons = currentAddons.includes(addonId)
+        ? currentAddons.filter(id => id !== addonId)
+        : [...currentAddons, addonId];
+      
+      return {
+        ...prev,
+        selectedAddons: {
+          ...prev.selectedAddons,
+          [serviceId]: newAddons
+        }
+      };
+    });
   };
 
   const handleDateSelect = (value: Date | Date[] | null) => {
@@ -181,29 +220,72 @@ export default function BookPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service) => (
-          <ServiceCard
-            key={service.id}
-            service={service}
-            onSelect={handleServiceToggle}
-            isSelected={formData.selectedServices.includes(service.id)}
-          />
-        ))}
+      <ServiceList
+        services={services}
+        selectedServices={formData.selectedServices}
+        selectedAddons={formData.selectedAddons}
+        onServiceToggle={handleServiceToggle}
+        onAddonToggle={handleAddonToggle}
+      />
+
+      {/* Quick Instructions Link */}
+      <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="bg-rose-600 rounded-full p-2 flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-rose-900 mb-1">Important Information</h3>
+              <p className="text-sm text-rose-700 leading-relaxed">
+                Please review our booking instructions before scheduling your appointment
+              </p>
+            </div>
+          </div>
+          <Link 
+            href="/instructions" 
+            className="bg-rose-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-rose-700 transition-colors text-center shadow-sm"
+          >
+            View Instructions
+          </Link>
+        </div>
       </div>
 
       {formData.selectedServices.length > 0 && (
         <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-900 mb-2">Selected Services:</h3>
-          <div className="space-y-2">
-            {selectedServices.map((service) => (
-              <div key={service.id} className="flex justify-between text-sm">
-                <span className="text-gray-800">{service.name}</span>
-                <span className="text-gray-800 font-medium">{formatCurrency(service.price)}</span>
-              </div>
-            ))}
+          <h3 className="font-semibold text-gray-900 mb-3">Selected Services:</h3>
+          <div className="space-y-3">
+            {selectedServices.map((service) => {
+              const serviceAddons = formData.selectedAddons[service.id] || [];
+              const addonTotal = serviceAddons.reduce((total, addonId) => {
+                const addon = service.addons?.find(a => a.id === addonId);
+                return total + (addon?.price || 0);
+              }, 0);
+              
+              return (
+                <div key={service.id} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-800 font-medium">{service.name}</span>
+                    <span className="text-gray-800 font-medium">{formatCurrency(service.price)}</span>
+                  </div>
+                  {serviceAddons.length > 0 && (
+                    <div className="pl-4 space-y-1">
+                      {serviceAddons.map(addonId => {
+                        const addon = service.addons?.find(a => a.id === addonId);
+                        return addon ? (
+                          <div key={addonId} className="flex justify-between text-xs text-gray-600">
+                            <span>+ {addon.name}</span>
+                            <span>+{formatCurrency(addon.price)}</span>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <div className="border-t border-rose-200 mt-2 pt-2 flex justify-between font-semibold text-gray-900">
+          <div className="border-t border-rose-200 mt-3 pt-3 flex justify-between font-semibold text-gray-900">
             <span>Total: {formatDuration(totalDuration)}</span>
             <span>{formatCurrency(totalPrice)}</span>
           </div>
@@ -299,9 +381,13 @@ export default function BookPage() {
                           animationDelay: `${index * 50}ms`,
                           animation: loadingSlots ? 'none' : 'fadeIn 0.3s ease-out forwards'
                         }}
+                        title={!slot.available ? 'Time slot unavailable - conflicts with existing booking or business hours' : `Available for ${formatDuration(totalDuration)} service`}
                       >
                         <Clock className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
                         {slot.time}
+                        {!slot.available && slot.bookingId && (
+                          <span className="ml-1 text-xs opacity-75">(Booked)</span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -464,6 +550,20 @@ export default function BookPage() {
         </div>
       </div>
 
+      {/* Important Information */}
+      <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
+        <h4 className="font-semibold text-rose-900 mb-3 flex items-center gap-2">
+          <MessageSquare className="w-5 h-5" />
+          Important Information
+        </h4>
+        <div className="space-y-2 text-sm text-rose-800">
+          <p>• Please arrive 10 minutes early for your appointment</p>
+          <p>• 24-hour cancellation policy applies</p>
+          <p>• Payment is due at time of service</p>
+          <p>• Bring any required items as specified for your service</p>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-4">
         <button
           onClick={handleBack}
@@ -534,6 +634,7 @@ export default function BookPage() {
                 email: '',
                 phone: '',
                 selectedServices: [],
+                selectedAddons: {},
                 appointmentDate: new Date(),
                 selectedTime: '',
                 notes: ''

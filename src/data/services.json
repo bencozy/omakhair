@@ -3,81 +3,206 @@
     {
       "id": "frontal-install",
       "name": "Frontal Installation",
-      "description": "Professional frontal lace installation with natural hairline blending",
+      "description": "Expert frontal lace installation with seamless hairline blending for a natural look",
       "duration": 180,
       "price": 250,
       "category": "hair",
-      "image": "/images/services/frontal-install.jpg"
+      "requirements": ["Bring your own frontal", "Hair should be washed prior"],
+      "includes": ["Hairline customization", "Basic styling", "Aftercare instructions"],
+      "popular": true,
+      "addons": [
+        {
+          "id": "frontal-deep-style",
+          "name": "Premium Styling",
+          "description": "Advanced curling, straightening, or wave pattern",
+          "price": 35,
+          "duration": 30
+        },
+        {
+          "id": "frontal-color-blend",
+          "name": "Color Blending",
+          "description": "Custom color matching and blending service",
+          "price": 50,
+          "duration": 45
+        },
+        {
+          "id": "frontal-baby-hairs",
+          "name": "Baby Hair Styling",
+          "description": "Detailed baby hair cutting and styling",
+          "price": 25,
+          "duration": 20
+        }
+      ]
+    },
+    {
+      "id": "frontal-reinstall",
+      "name": "Frontal Re-Installation",
+      "description": "Professional removal and fresh installation of existing frontal lace",
+      "duration": 150,
+      "price": 180,
+      "category": "hair",
+      "image": "/images/services/frontal-reinstall.jpg",
+      "requirements": ["Existing frontal in good condition"],
+      "includes": ["Safe removal", "Cleaning", "Fresh installation", "Touch-up styling"]
+    },
+    {
+      "id": "closure-install",
+      "name": "Closure Installation",
+      "description": "Seamless closure installation for natural parting and versatile styling",
+      "duration": 120,
+      "price": 200,
+      "category": "hair",
+      "image": "/images/services/closure-install.jpg",
+      "requirements": ["Bring your own closure", "Clean scalp required"],
+      "includes": ["Blending", "Parting customization", "Basic styling"]
     },
     {
       "id": "corn-rows",
-      "name": "Corn Rows",
-      "description": "Traditional cornrow braiding in various patterns and styles",
+      "name": "Cornrows",
+      "description": "Traditional protective cornrow braiding in various patterns and designs",
       "duration": 120,
       "price": 80,
       "category": "hair",
-      "image": "/images/services/corn-rows.jpg"
+      "image": "/images/services/corn-rows.jpg",
+      "requirements": ["Hair length minimum 3 inches"],
+      "includes": ["Pattern consultation", "Scalp treatment", "Edge styling"]
     },
     {
-      "id": "braids",
-      "name": "Braids",
-      "description": "Various braiding styles including box braids, twist braids, and more",
+      "id": "box-braids",
+      "name": "Box Braids",
+      "description": "Classic box braids with premium synthetic or human hair extensions",
+      "duration": 300,
+      "price": 180,
+      "category": "hair",
+      "requirements": ["Hair extensions included", "6-8 hours commitment"],
+      "includes": ["Hair washing", "Scalp treatment", "Basic styling", "Maintenance tips"],
+      "popular": true,
+      "addons": [
+        {
+          "id": "premium-hair",
+          "name": "Human Hair Upgrade",
+          "description": "Upgrade to 100% human hair extensions",
+          "price": 80,
+          "duration": 0
+        },
+        {
+          "id": "ombre-color",
+          "name": "Ombre/Color Effect",
+          "description": "Two-tone or gradient color braiding",
+          "price": 40,
+          "duration": 30
+        },
+        {
+          "id": "scalp-massage",
+          "name": "Scalp Massage Treatment",
+          "description": "Relaxing scalp massage with essential oils",
+          "price": 25,
+          "duration": 15
+        }
+      ]
+    },
+    {
+      "id": "twist-braids",
+      "name": "Twist Braids",
+      "description": "Elegant twist braids for a sophisticated protective style",
       "duration": 240,
       "price": 150,
       "category": "hair",
-      "image": "/images/services/braids.jpg"
+      "image": "/images/services/twist-braids.jpg",
+      "requirements": ["Natural hair minimum 4 inches"],
+      "includes": ["Pre-treatment", "Professional styling", "Finishing touches"]
     },
     {
       "id": "wig-making",
-      "name": "Wig Making",
-      "description": "Custom wig creation from scratch with premium hair",
-      "duration": 300,
-      "price": 400,
+      "name": "Custom Wig Creation",
+      "description": "Bespoke wig crafted from premium human hair with custom cap construction",
+      "duration": 480,
+      "price": 450,
       "category": "hair",
-      "image": "/images/services/wig-making.jpg"
+      "image": "/images/services/wig-making.jpg",
+      "requirements": ["Consultation required", "Hair selection appointment", "Multiple fittings"],
+      "includes": ["Cap measurement", "Hair selection", "Construction", "Styling", "Care kit"],
+      "premium": true
     },
     {
       "id": "wig-revamping",
-      "name": "Wig Revamping",
-      "description": "Restoration and styling of existing wigs",
+      "name": "Wig Restoration & Styling",
+      "description": "Complete wig transformation with washing, conditioning, and restyling",
       "duration": 150,
       "price": 120,
       "category": "hair",
-      "image": "/images/services/wig-revamping.jpg"
+      "image": "/images/services/wig-revamping.jpg",
+      "requirements": ["Bring existing wig", "Specify desired style"],
+      "includes": ["Deep cleaning", "Conditioning treatment", "Cut & style", "Heat protection"]
     },
     {
       "id": "hair-coloring",
-      "name": "Hair Coloring",
-      "description": "Professional hair coloring and highlights",
+      "name": "Hair Coloring & Highlights",
+      "description": "Professional color services including highlights, lowlights, and full color",
       "duration": 180,
       "price": 200,
       "category": "hair",
-      "image": "/images/services/hair-coloring.jpg"
+      "image": "/images/services/hair-coloring.jpg",
+      "requirements": ["Consultation required", "Patch test 48hrs prior"],
+      "includes": ["Color consultation", "Application", "Toning", "Styling", "Color care products"]
     },
     {
-      "id": "gel-pack-up",
-      "name": "Gel Pack Up",
-      "description": "Sleek gel styling and protective packing",
+      "id": "silk-press",
+      "name": "Silk Press",
+      "description": "Smooth, silky hair transformation with heat protection and lasting shine",
+      "duration": 120,
+      "price": 85,
+      "category": "hair",
+      "image": "/images/services/silk-press.jpg",
+      "requirements": ["Clean, detangled hair preferred"],
+      "includes": ["Wash & condition", "Heat protectant", "Blow dry", "Flat iron", "Finishing serum"]
+    },
+    {
+      "id": "gel-slick-back",
+      "name": "Gel Slick Back",
+      "description": "Sleek, polished look with long-lasting hold and edge control",
+      "duration": 45,
+      "price": 35,
+      "category": "hair",
+      "image": "/images/services/gel-slick-back.jpg",
+      "requirements": ["Recently washed hair recommended"],
+      "includes": ["Edge laying", "Styling gel application", "Finishing touches"]
+    },
+    {
+      "id": "wash-blow-dry",
+      "name": "Wash & Blow Dry",
+      "description": "Professional hair washing and blow dry service with styling",
       "duration": 60,
       "price": 45,
       "category": "hair",
-      "image": "/images/services/gel-pack-up.jpg"
+      "image": "/images/services/wash-blow-dry.jpg",
+      "requirements": ["None"],
+      "includes": ["Shampoo", "Deep conditioning", "Blow dry", "Basic styling"]
     }
   ],
   "businessHours": {
-    "monday": { "open": "09:00", "close": "18:00", "closed": false },
-    "tuesday": { "open": "09:00", "close": "18:00", "closed": false },
-    "wednesday": { "open": "09:00", "close": "18:00", "closed": false },
-    "thursday": { "open": "09:00", "close": "18:00", "closed": false },
+    "monday": { "open": "09:00", "close": "17:00", "closed": false },
+    "tuesday": { "open": "09:00", "close": "19:00", "closed": false },
+    "wednesday": { "open": "09:00", "close": "19:00", "closed": false },
+    "thursday": { "open": "09:00", "close": "19:00", "closed": false },
     "friday": { "open": "09:00", "close": "20:00", "closed": false },
     "saturday": { "open": "08:00", "close": "20:00", "closed": false },
-    "sunday": { "open": "10:00", "close": "16:00", "closed": false }
+    "sunday": { "open": "10:00", "close": "17:00", "closed": false }
   },
   "settings": {
-    "minimumBookingGap": 120,
-    "maxAdvanceBookingDays": 60,
+    "minimumBookingGap": 0,
+    "maxAdvanceBookingDays": 30,
     "defaultServiceDuration": 120,
     "taxRate": 0.08,
-    "cancellationPolicyHours": 24
+    "cancellationPolicyHours": 24,
+    "lunchBreak": null,
+    "bufferTime": 0,
+    "allowSameDayBooking": true
+  },
+  "policies": {
+    "cancellation": "24-hour cancellation policy. Late cancellations may incur a fee.",
+    "lateness": "Please arrive 10 minutes early. Late arrivals may result in shortened service time.",
+    "payment": "Payment required at time of service. Cash, card, and digital payments accepted.",
+    "consultation": "Free consultation available for custom services and color treatments."
   }
 }

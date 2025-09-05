@@ -192,18 +192,20 @@ export default function AdminPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 gap-4">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center text-rose-600 hover:text-rose-700 mr-8">
+              <Link href="/" className="flex items-center text-rose-600 hover:text-rose-700 mr-4 sm:mr-8">
                 <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Home
+                <span className="hidden sm:inline">Back to Home</span>
+                <span className="sm:hidden">Back</span>
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
             </div>
             <div className="flex items-center gap-4">
               <button className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors">
                 <Download className="w-4 h-4" />
-                Export
+                <span className="hidden sm:inline">Export</span>
+                <span className="sm:hidden">Export</span>
               </button>
             </div>
           </div>
@@ -212,51 +214,51 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
+              <div className="p-3 bg-blue-100 rounded-xl flex-shrink-0">
                 <Calendar className="w-6 h-6 text-blue-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700">Total Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+              <div className="ml-4 min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-700 truncate">Total Bookings</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalBookings}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
+              <div className="p-3 bg-green-100 rounded-xl flex-shrink-0">
                 <Clock className="w-6 h-6 text-green-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700">Today&apos;s Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.todayBookings}</p>
+              <div className="ml-4 min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-700 truncate">Today&apos;s Bookings</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.todayBookings}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
+              <div className="p-3 bg-purple-100 rounded-xl flex-shrink-0">
                 <DollarSign className="w-6 h-6 text-purple-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700">Weekly Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.weeklyRevenue)}</p>
+              <div className="ml-4 min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-700 truncate">Weekly Revenue</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(stats.weeklyRevenue)}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-rose-100 rounded-lg">
+              <div className="p-3 bg-rose-100 rounded-xl flex-shrink-0">
                 <DollarSign className="w-6 h-6 text-rose-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700">Monthly Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.monthlyRevenue)}</p>
+              <div className="ml-4 min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-700 truncate">Monthly Revenue</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(stats.monthlyRevenue)}</p>
               </div>
             </div>
           </div>
@@ -278,52 +280,134 @@ export default function AdminPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-3 text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Search customers, services..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 placeholder-gray-500"
-                />
-              </div>
+        <div className="bg-white rounded-xl shadow-sm mb-6 p-4 sm:p-6 border border-gray-100">
+          <div className="flex flex-col gap-4">
+            <div className="relative">
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search customers, services..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 placeholder-gray-500 bg-white text-gray-900"
+              />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
-            >
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
-            >
-              <option value="all">All Dates</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm bg-white text-gray-900 font-medium"
+              >
+                <option value="all" className="text-gray-900">All Statuses</option>
+                <option value="pending" className="text-gray-900">Pending</option>
+                <option value="confirmed" className="text-gray-900">Confirmed</option>
+                <option value="completed" className="text-gray-900">Completed</option>
+                <option value="cancelled" className="text-gray-900">Cancelled</option>
+              </select>
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm bg-white text-gray-900 font-medium"
+              >
+                <option value="all" className="text-gray-900">All Dates</option>
+                <option value="today" className="text-gray-900">Today</option>
+                <option value="week" className="text-gray-900">This Week</option>
+                <option value="month" className="text-gray-900">This Month</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Bookings Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
               Bookings ({filteredBookings.length})
             </h2>
           </div>
-          <div className="overflow-x-auto">
+          
+          {/* Mobile Card View */}
+          <div className="block sm:hidden">
+            {filteredBookings.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">
+                No bookings found matching your criteria.
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {filteredBookings.map((booking) => (
+                  <div key={booking.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          {booking.customer.firstName} {booking.customer.lastName}
+                        </h3>
+                        <p className="text-sm text-gray-600">{booking.customer.email}</p>
+                        <p className="text-sm text-gray-600">{booking.customer.phone}</p>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {booking.services.map(s => s.name).join(', ')}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {formatDuration(booking.services.reduce((total, s) => total + s.duration, 0))}
+                      </p>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {format(booking.appointmentDate, 'MMM d, yyyy')}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {booking.startTime} - {booking.endTime}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-gray-900">
+                          {formatCurrency(booking.finalPrice)}
+                        </p>
+                        {booking.discountAmount && booking.discountAmount > 0 && (
+                          <p className="text-xs text-green-600">
+                            -{formatCurrency(booking.discountAmount)} discount
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => {
+                          setSelectedBooking(booking);
+                          setShowDiscountModal(true);
+                        }}
+                        className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
+                      >
+                        Discount
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this booking?')) {
+                            deleteBooking(booking.id);
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -395,12 +479,12 @@ export default function AdminPage() {
                         <select
                           value={booking.status}
                           onChange={(e) => updateBookingStatus(booking.id, e.target.value as Booking['status'])}
-                          className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                          className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-white text-gray-900 font-medium"
                         >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="completed">Completed</option>
-                          <option value="cancelled">Cancelled</option>
+                          <option value="pending" className="text-gray-900">Pending</option>
+                          <option value="confirmed" className="text-gray-900">Confirmed</option>
+                          <option value="completed" className="text-gray-900">Completed</option>
+                          <option value="cancelled" className="text-gray-900">Cancelled</option>
                         </select>
                         <button
                           onClick={() => {
