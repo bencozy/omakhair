@@ -1,102 +1,163 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Calendar, Clock, Star, Phone, Mail, MapPin } from "lucide-react";
+import { ServiceCard } from "@/components/ServiceCard";
+import { getServices } from "@/lib/utils";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const services = getServices();
+  const featuredServices = services.slice(0, 3);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-rose-600">Oma Khair</h1>
+            </div>
+            <nav className="hidden md:flex space-x-8">
+              <Link href="#services" className="text-gray-700 hover:text-rose-600 transition-colors">
+                Services
+              </Link>
+              <Link href="#about" className="text-gray-700 hover:text-rose-600 transition-colors">
+                About
+              </Link>
+              <Link href="#contact" className="text-gray-700 hover:text-rose-600 transition-colors">
+                Contact
+              </Link>
+              <Link href="/admin" className="text-gray-700 hover:text-rose-600 transition-colors">
+                Admin
+              </Link>
+            </nav>
+            <Link
+              href="/book"
+              className="bg-rose-600 text-white px-4 sm:px-6 py-2 rounded-full hover:bg-rose-700 transition-colors text-sm sm:text-base"
+            >
+              <span className="hidden sm:inline">Book Now</span>
+              <span className="sm:hidden">Book</span>
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </header>
+
+      {/* Hero Section */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-5xl font-bold text-gray-900 mb-6">
+            Beautiful Hair & Makeup
+            <span className="block text-rose-600">Artistry</span>
+          </h2>
+          <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
+            Transform your look with our professional hair and makeup services. 
+            From frontal installations to custom wig making, we bring your vision to life.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/book"
+              className="bg-rose-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-rose-700 transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <Calendar className="w-5 h-5" />
+              Book Appointment
+            </Link>
+            <Link
+              href="#services"
+              className="border-2 border-rose-600 text-rose-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-rose-600 hover:text-white transition-colors text-center"
+            >
+              View Services
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="bg-rose-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Easy Scheduling</h3>
+              <p className="text-gray-700">Book appointments online with our simple booking system</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-rose-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Star className="w-8 h-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Expert Styling</h3>
+              <p className="text-gray-700">Professional hair and makeup services by experienced stylists</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-rose-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="w-8 h-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Flexible Hours</h3>
+              <p className="text-gray-700">Open 7 days a week with extended weekend hours</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Services */}
+      <section id="services" className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Services</h2>
+            <p className="text-xl text-gray-700">Professional hair and makeup services tailored to your needs</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            {featuredServices.map((service) => (
+              <ServiceCard key={service.id} service={service} />
+            ))}
+          </div>
+          <div className="text-center">
+            <Link
+              href="/book"
+              className="bg-rose-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-rose-700 transition-colors"
+            >
+              View All Services & Book
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Info */}
+      <section id="contact" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Get In Touch</h2>
+            <p className="text-xl text-gray-700">Ready to book or have questions? We're here to help!</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <Phone className="w-8 h-8 text-rose-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Phone</h3>
+              <p className="text-gray-700">(555) 123-4567</p>
+            </div>
+            <div className="text-center">
+              <Mail className="w-8 h-8 text-rose-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Email</h3>
+              <p className="text-gray-700">hello@omakhair.com</p>
+            </div>
+            <div className="text-center">
+              <MapPin className="w-8 h-8 text-rose-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Location</h3>
+              <p className="text-gray-700">123 Beauty Ave, Style City</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h3 className="text-2xl font-bold text-rose-400 mb-4">Oma Khair</h3>
+          <p className="text-gray-400 mb-4">Professional Hair & Makeup Services</p>
+          <p className="text-gray-500 text-sm">
+            © 2024 Oma Khair. All rights reserved.
+          </p>
+        </div>
       </footer>
     </div>
   );

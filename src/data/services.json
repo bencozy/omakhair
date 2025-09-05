@@ -1,0 +1,83 @@
+{
+  "services": [
+    {
+      "id": "frontal-install",
+      "name": "Frontal Installation",
+      "description": "Professional frontal lace installation with natural hairline blending",
+      "duration": 180,
+      "price": 250,
+      "category": "hair",
+      "image": "/images/services/frontal-install.jpg"
+    },
+    {
+      "id": "corn-rows",
+      "name": "Corn Rows",
+      "description": "Traditional cornrow braiding in various patterns and styles",
+      "duration": 120,
+      "price": 80,
+      "category": "hair",
+      "image": "/images/services/corn-rows.jpg"
+    },
+    {
+      "id": "braids",
+      "name": "Braids",
+      "description": "Various braiding styles including box braids, twist braids, and more",
+      "duration": 240,
+      "price": 150,
+      "category": "hair",
+      "image": "/images/services/braids.jpg"
+    },
+    {
+      "id": "wig-making",
+      "name": "Wig Making",
+      "description": "Custom wig creation from scratch with premium hair",
+      "duration": 300,
+      "price": 400,
+      "category": "hair",
+      "image": "/images/services/wig-making.jpg"
+    },
+    {
+      "id": "wig-revamping",
+      "name": "Wig Revamping",
+      "description": "Restoration and styling of existing wigs",
+      "duration": 150,
+      "price": 120,
+      "category": "hair",
+      "image": "/images/services/wig-revamping.jpg"
+    },
+    {
+      "id": "hair-coloring",
+      "name": "Hair Coloring",
+      "description": "Professional hair coloring and highlights",
+      "duration": 180,
+      "price": 200,
+      "category": "hair",
+      "image": "/images/services/hair-coloring.jpg"
+    },
+    {
+      "id": "gel-pack-up",
+      "name": "Gel Pack Up",
+      "description": "Sleek gel styling and protective packing",
+      "duration": 60,
+      "price": 45,
+      "category": "hair",
+      "image": "/images/services/gel-pack-up.jpg"
+    }
+  ],
+  "businessHours": {
+    "monday": { "open": "09:00", "close": "18:00", "closed": false },
+    "tuesday": { "open": "09:00", "close": "18:00", "closed": false },
+    "wednesday": { "open": "09:00", "close": "18:00", "closed": false },
+    "thursday": { "open": "09:00", "close": "18:00", "closed": false },
+    "friday": { "open": "09:00", "close": "20:00", "closed": false },
+    "saturday": { "open": "08:00", "close": "20:00", "closed": false },
+    "sunday": { "open": "10:00", "close": "16:00", "closed": false }
+  },
+  "settings": {
+    "minimumBookingGap": 120,
+    "maxAdvanceBookingDays": 60,
+    "defaultServiceDuration": 120,
+    "taxRate": 0.08,
+    "cancellationPolicyHours": 24
+  }
+}
