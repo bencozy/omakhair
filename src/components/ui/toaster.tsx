@@ -25,8 +25,8 @@ export function Toaster() {
       }, 5000);
     };
 
-    window.addEventListener('toast' as any, handleToast);
-    return () => window.removeEventListener('toast' as any, handleToast);
+    window.addEventListener('toast', handleToast as EventListener);
+    return () => window.removeEventListener('toast', handleToast as EventListener);
   }, []);
 
   if (toasts.length === 0) return null;

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // In a real application, you would fetch bookings from a database
     // For now, return an empty array as bookings are stored in localStorage

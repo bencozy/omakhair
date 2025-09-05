@@ -127,7 +127,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Get In Touch</h2>
-            <p className="text-xl text-gray-700">Ready to book or have questions? We're here to help!</p>
+            <p className="text-xl text-gray-700">Ready to book or have questions? We&apos;re here to help!</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">

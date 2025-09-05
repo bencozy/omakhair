@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare } from 'lucide-react';
 import Calendar from 'react-calendar';
-import { format, addDays, isBefore, startOfToday } from 'date-fns';
+import { format, addDays, startOfToday } from 'date-fns';
 import { ServiceCard } from '@/components/ServiceCard';
 import { BookingFormData, TimeSlot, Booking } from '@/types';
 import { 
@@ -15,9 +15,7 @@ import {
   formatCurrency,
   formatDuration,
   validateEmail,
-  validatePhone,
-  generateBookingId,
-  generateCustomerId
+  validatePhone
 } from '@/lib/utils';
 
 export default function BookPage() {
@@ -47,7 +45,7 @@ export default function BookPage() {
   useEffect(() => {
     const saved = localStorage.getItem('bookings');
     if (saved) {
-      const bookings = JSON.parse(saved).map((booking: any) => ({
+      const bookings = JSON.parse(saved).map((booking: Booking) => ({
         ...booking,
         appointmentDate: new Date(booking.appointmentDate),
         createdAt: new Date(booking.createdAt),
@@ -81,9 +79,9 @@ export default function BookPage() {
     }));
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, appointmentDate: date, selectedTime: '' }));
+  const handleDateSelect = (value: Date | Date[] | null) => {
+    if (value && value instanceof Date) {
+      setFormData(prev => ({ ...prev, appointmentDate: value, selectedTime: '' }));
       // Clear any previous time selection error when date changes
       if (errors.time) {
         setErrors(prev => ({ ...prev, time: '' }));
@@ -174,7 +172,7 @@ export default function BookPage() {
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Services</h2>
-        <p className="text-gray-700">Choose the services you'd like to book</p>
+        <p className="text-gray-700">Choose the services you&apos;d like to book</p>
       </div>
       
       {errors.services && (
@@ -236,7 +234,7 @@ export default function BookPage() {
             <div className="flex-1 flex items-center justify-center">
               <div className="w-full max-w-sm">
                 <Calendar
-                  onChange={handleDateSelect}
+                  onChange={handleDateSelect as any}
                   value={formData.appointmentDate}
                   minDate={new Date()}
                   maxDate={addDays(new Date(), 60)}

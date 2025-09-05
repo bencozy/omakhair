@@ -6,18 +6,13 @@ import { format, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWi
 import { 
   Calendar, 
   DollarSign, 
-  Users, 
   Clock, 
-  Eye,
-  Edit3,
   Trash2,
-  Plus,
-  Filter,
   Download,
   Search,
   ArrowLeft
 } from 'lucide-react';
-import { Booking, AdminStats } from '@/types';
+import { Booking, AdminStats, Service } from '@/types';
 import { formatCurrency, formatDuration } from '@/lib/utils';
 
 export default function AdminPage() {
@@ -41,7 +36,7 @@ export default function AdminPage() {
   useEffect(() => {
     const saved = localStorage.getItem('bookings');
     if (saved) {
-      const loadedBookings = JSON.parse(saved).map((booking: any) => ({
+      const loadedBookings = JSON.parse(saved).map((booking: Booking) => ({
         ...booking,
         appointmentDate: new Date(booking.appointmentDate),
         createdAt: new Date(booking.createdAt),
@@ -73,7 +68,7 @@ export default function AdminPage() {
       .reduce((sum, booking) => sum + booking.finalPrice, 0);
 
     // Calculate popular services
-    const serviceCount: { [key: string]: { service: any; count: number } } = {};
+    const serviceCount: { [key: string]: { service: Service; count: number } } = {};
     bookings.forEach(booking => {
       booking.services.forEach(service => {
         if (serviceCount[service.id]) {
@@ -236,7 +231,7 @@ export default function AdminPage() {
                 <Clock className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700">Today's Bookings</p>
+                <p className="text-sm font-medium text-gray-700">Today&apos;s Bookings</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.todayBookings}</p>
               </div>
             </div>

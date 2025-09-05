@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import { Booking } from '@/types';
-import { format, addMinutes } from 'date-fns';
+import { addMinutes } from 'date-fns';
 
 // Google Calendar configuration
 const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
@@ -8,7 +8,7 @@ const GOOGLE_CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 // Initialize Google Calendar API
-let calendar: any = null;
+let calendar: ReturnType<typeof google.calendar> | null = null;
 
 function initializeCalendar() {
   if (!GOOGLE_CLIENT_EMAIL || !GOOGLE_PRIVATE_KEY) {
@@ -17,12 +17,11 @@ function initializeCalendar() {
   }
 
   try {
-    const auth = new google.auth.JWT(
-      GOOGLE_CLIENT_EMAIL,
-      undefined,
-      GOOGLE_PRIVATE_KEY,
-      ['https://www.googleapis.com/auth/calendar']
-    );
+    const auth = new google.auth.JWT({
+      email: GOOGLE_CLIENT_EMAIL,
+      key: GOOGLE_PRIVATE_KEY,
+      scopes: ['https://www.googleapis.com/auth/calendar']
+    });
 
     calendar = google.calendar({ version: 'v3', auth });
     return calendar;
