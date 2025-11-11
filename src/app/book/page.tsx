@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign } from 'lucide-react';
 import Calendar from 'react-calendar';
 import { format, addDays, startOfToday } from 'date-fns';
 import { ServiceList } from '@/components/ServiceList';
@@ -19,6 +20,8 @@ import {
 } from '@/lib/utils';
 
 export default function BookPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<BookingFormData>({
     firstName: '',
@@ -33,31 +36,164 @@ export default function BookPage() {
   });
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
+  const [blockedDates, setBlockedDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [bookingError, setBookingError] = useState<string>('');
 
   const services = getServices();
   const selectedServices = services.filter(service => formData.selectedServices.includes(service.id));
   const totalPrice = calculateTotalPrice(formData.selectedServices, formData.selectedAddons);
   const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons);
 
-  // Load existing bookings from localStorage
+  // Load state from URL on mount
   useEffect(() => {
-    const saved = localStorage.getItem('bookings');
-    if (saved) {
-      const bookings = JSON.parse(saved).map((booking: Booking) => ({
-        ...booking,
-        appointmentDate: new Date(booking.appointmentDate),
-        createdAt: new Date(booking.createdAt),
-        updatedAt: new Date(booking.updatedAt)
-      }));
-      console.log('Loaded bookings:', bookings);
-      setExistingBookings(bookings);
-    } else {
-      console.log('No bookings found in localStorage');
-      setExistingBookings([]);
+    const stepParam = searchParams.get('step');
+    const servicesParam = searchParams.get('services');
+    const addonsParam = searchParams.get('addons');
+    
+    if (stepParam) {
+      const stepNum = parseInt(stepParam, 10);
+      if (stepNum >= 1 && stepNum <= 4) {
+        setStep(stepNum);
+      }
     }
+    
+    if (servicesParam) {
+      try {
+        const selectedServices = JSON.parse(decodeURIComponent(servicesParam));
+        const selectedAddons = addonsParam ? JSON.parse(decodeURIComponent(addonsParam)) : {};
+        
+        setFormData(prev => ({
+          ...prev,
+          selectedServices,
+          selectedAddons
+        }));
+      } catch (error) {
+        console.error('Failed to parse URL params:', error);
+      }
+    } else {
+      // Fallback to localStorage if no URL params
+      const savedSelections = localStorage.getItem('bookingSelections');
+      if (savedSelections) {
+        try {
+          const parsed = JSON.parse(savedSelections);
+          setFormData(prev => ({
+            ...prev,
+            selectedServices: parsed.selectedServices || [],
+            selectedAddons: parsed.selectedAddons || {}
+          }));
+        } catch (error) {
+          console.error('Failed to load saved selections:', error);
+        }
+      }
+    }
+  }, [searchParams]);
+
+  // Update URL when step or selections change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    
+    // Don't add URL params on step 1 or step 4 (success page)
+    if (step > 1 && step < 4) {
+      params.set('step', step.toString());
+      
+      if (formData.selectedServices.length > 0) {
+        params.set('services', encodeURIComponent(JSON.stringify(formData.selectedServices)));
+        
+        if (Object.keys(formData.selectedAddons).length > 0) {
+          params.set('addons', encodeURIComponent(JSON.stringify(formData.selectedAddons)));
+        }
+        
+        // Also save to localStorage as backup
+        localStorage.setItem('bookingSelections', JSON.stringify({
+          selectedServices: formData.selectedServices,
+          selectedAddons: formData.selectedAddons
+        }));
+      }
+    }
+    
+    const newUrl = params.toString() ? `?${params.toString()}` : '/book';
+    router.replace(newUrl, { scroll: false });
+  }, [step, formData.selectedServices, formData.selectedAddons, router]);
+
+  // Load existing bookings from API
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await fetch('/api/bookings');
+        const data = await response.json();
+        
+        if (data.bookings) {
+          const bookings = data.bookings.map((booking: any) => {
+            // Parse appointment date without timezone conversion
+            const dateStr = booking.appointmentDate.split('T')[0]; // Get YYYY-MM-DD
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const appointmentDate = new Date(year, month - 1, day); // month is 0-indexed
+            
+            return {
+              id: booking._id,
+              customerId: booking.customerId._id || booking.customerId,
+              customer: typeof booking.customerId === 'object' ? {
+                id: booking.customerId._id,
+                firstName: booking.customerId.firstName,
+                lastName: booking.customerId.lastName,
+                email: booking.customerId.email,
+                phone: booking.customerId.phone
+              } : booking.customer,
+              serviceIds: booking.serviceIds,
+              services: booking.services,
+              appointmentDate,
+              startTime: booking.startTime,
+              endTime: booking.endTime,
+              totalPrice: booking.totalPrice,
+              discountAmount: booking.discountAmount || 0,
+              finalPrice: booking.finalPrice,
+              status: booking.status,
+              notes: booking.notes || '',
+              createdAt: new Date(booking.createdAt),
+              updatedAt: new Date(booking.updatedAt)
+            };
+          });
+          console.log('Loaded bookings for time blocking:', bookings.map(b => ({
+            date: b.appointmentDate,
+            time: `${b.startTime}-${b.endTime}`,
+            status: b.status
+          })));
+          setExistingBookings(bookings);
+        }
+      } catch (error) {
+        console.error('Failed to fetch bookings:', error);
+        setExistingBookings([]);
+      }
+    };
+    
+    fetchBookings();
+  }, []);
+
+  // Load blocked dates from API
+  useEffect(() => {
+    const fetchBlockedDates = async () => {
+      try {
+        const response = await fetch('/api/blocked-dates');
+        const data = await response.json();
+        
+        if (data.blockedDates) {
+          const dates = data.blockedDates.map((item: any) => {
+            // Parse date without timezone conversion
+            const dateStr = item.date.split('T')[0];
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(year, month - 1, day);
+          });
+          setBlockedDates(dates);
+        }
+      } catch (error) {
+        console.error('Failed to fetch blocked dates:', error);
+      }
+    };
+    
+    fetchBlockedDates();
   }, []);
 
   // Generate time slots when date changes
@@ -178,13 +314,23 @@ export default function BookPage() {
 
     setLoading(true);
     try {
+      // Format date properly to avoid timezone issues
+      // Create a date string in local timezone (YYYY-MM-DD)
+      const year = formData.appointmentDate.getFullYear();
+      const month = String(formData.appointmentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(formData.appointmentDate.getDate()).padStart(2, '0');
+      const localDateString = `${year}-${month}-${day}T00:00:00`;
+
       // Call API to create booking
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          appointmentDate: localDateString,
+        }),
       });
 
       const result = await response.json();
@@ -193,15 +339,14 @@ export default function BookPage() {
         throw new Error(result.error || 'Failed to create booking');
       }
 
-      // Save to localStorage for admin dashboard
-      const existingBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-      existingBookings.push(result.booking);
-      localStorage.setItem('bookings', JSON.stringify(existingBookings));
-
+      // Booking is now saved in the database via the API
+      // Clear saved selections from localStorage
+      localStorage.removeItem('bookingSelections');
+      setBookingError('');
       setStep(4);
     } catch (error) {
       console.error('Booking error:', error);
-      alert('Failed to create booking. Please try again.');
+      setBookingError('Failed to create booking. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -210,12 +355,12 @@ export default function BookPage() {
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Services</h2>
-        <p className="text-gray-700">Choose the services you&apos;d like to book</p>
+        <h2 className="text-3xl font-serif font-bold text-black mb-2 tracking-tight">Select Services</h2>
+        <p className="text-gray-600">Choose the services you&apos;d like to book</p>
       </div>
       
       {errors.services && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+        <div className="bg-gray-100 border border-gray-300 text-gray-900 px-4 py-3 rounded-md">
           {errors.services}
         </div>
       )}
@@ -229,22 +374,22 @@ export default function BookPage() {
       />
 
       {/* Quick Instructions Link */}
-      <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-4 sm:p-6">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="bg-rose-600 rounded-full p-2 flex-shrink-0">
+            <div className="bg-black rounded-full p-2 flex-shrink-0">
               <AlertCircle className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-rose-900 mb-1">Important Information</h3>
-              <p className="text-sm text-rose-700 leading-relaxed">
+              <h3 className="text-lg font-bold text-black mb-1">Important Information</h3>
+              <p className="text-sm text-gray-900 leading-relaxed">
                 Please review our booking instructions before scheduling your appointment
               </p>
             </div>
           </div>
           <Link 
             href="/instructions" 
-            className="bg-rose-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-rose-700 transition-colors text-center shadow-sm"
+            className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors text-center shadow-sm"
           >
             View Instructions
           </Link>
@@ -252,7 +397,7 @@ export default function BookPage() {
       </div>
 
       {formData.selectedServices.length > 0 && (
-        <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h3 className="font-semibold text-gray-900 mb-3">Selected Services:</h3>
           <div className="space-y-3">
             {selectedServices.map((service) => {
@@ -285,7 +430,7 @@ export default function BookPage() {
               );
             })}
           </div>
-          <div className="border-t border-rose-200 mt-3 pt-3 flex justify-between font-semibold text-gray-900">
+          <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between font-semibold text-gray-900">
             <span>Total: {formatDuration(totalDuration)}</span>
             <span>{formatCurrency(totalPrice)}</span>
           </div>
@@ -295,7 +440,7 @@ export default function BookPage() {
       <button
         onClick={handleNext}
         disabled={formData.selectedServices.length === 0}
-        className="w-full bg-rose-600 text-white py-3 rounded-lg font-semibold hover:bg-rose-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
       >
         Continue to Date & Time
       </button>
@@ -305,8 +450,8 @@ export default function BookPage() {
   const renderStep2 = () => (
     <div className="space-y-6 lg:space-y-8">
       <div className="text-center">
-        <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">Select Date & Time</h2>
-        <p className="text-gray-700 text-sm lg:text-base">Choose your preferred appointment date and time</p>
+        <h2 className="text-2xl lg:text-3xl font-serif font-bold text-black mb-2 tracking-tight">Select Date & Time</h2>
+        <p className="text-gray-600 text-sm lg:text-base">Choose your preferred appointment date and time</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 items-stretch">
@@ -322,7 +467,19 @@ export default function BookPage() {
                   maxDate={addDays(new Date(), 60)}
                   className="react-calendar"
                   tileDisabled={({ date, view }) => {
-                    return view === 'month' && date < startOfToday();
+                    if (view !== 'month') return false;
+                    
+                    // Disable past dates
+                    if (date < startOfToday()) return true;
+                    
+                    // Disable blocked dates
+                    const isBlocked = blockedDates.some(blockedDate => {
+                      const dateStr = format(date, 'yyyy-MM-dd');
+                      const blockedDateStr = format(blockedDate, 'yyyy-MM-dd');
+                      return dateStr === blockedDateStr;
+                    });
+                    
+                    return isBlocked;
                   }}
                   showNeighboringMonth={false}
                   next2Label={null}
@@ -340,15 +497,20 @@ export default function BookPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
               Available Times
             </h3>
-            <p className="text-sm text-gray-600 mb-6 text-center flex items-center justify-center">
-              <CalendarIcon className="w-4 h-4 mr-2 text-rose-500" />
+            <p className="text-sm text-gray-600 mb-2 text-center flex items-center justify-center">
+              <CalendarIcon className="w-4 h-4 mr-2 text-gray-500" />
               {format(formData.appointmentDate, 'EEEE, MMMM d, yyyy')}
             </p>
+            {totalDuration > 0 && (
+              <p className="text-xs text-gray-500 mb-4 text-center">
+                Your service takes {formatDuration(totalDuration)}
+              </p>
+            )}
             
             {errors.time && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4 flex items-center">
-                <div className="w-5 h-5 rounded-full bg-red-200 flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-red-600 text-xs font-bold">!</span>
+              <div className="bg-gray-100 border border-gray-300 text-gray-900 px-4 py-3 rounded-lg mb-4 flex items-center">
+                <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-gray-900 text-xs font-bold">!</span>
                 </div>
                 {errors.time}
               </div>
@@ -359,35 +521,32 @@ export default function BookPage() {
                 {loadingSlots ? (
                   <div className="flex items-center justify-center py-12 h-full">
                     <div className="flex flex-col items-center space-y-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
                       <p className="text-gray-600 text-sm">Loading available times...</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {availableSlots.map((slot, index) => (
                       <button
                         key={slot.time}
                         onClick={() => setFormData(prev => ({ ...prev, selectedTime: slot.time }))}
                         disabled={!slot.available}
-                        className={`p-2 lg:p-3 text-xs lg:text-sm font-medium rounded-lg border-2 transition-all duration-200 flex items-center justify-center min-h-[44px] lg:min-h-[48px] transform hover:scale-105 ${
+                        className={`p-3 text-sm font-semibold rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 min-h-[52px] ${
                           formData.selectedTime === slot.time
-                            ? 'bg-rose-600 text-white border-rose-600 shadow-md ring-2 ring-rose-200 scale-105'
+                            ? 'bg-black text-white border-black shadow-md scale-105'
                             : slot.available
-                            ? 'bg-white text-gray-800 border-gray-300 hover:border-rose-400 hover:bg-rose-50 hover:shadow-sm'
-                            : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                            ? 'bg-white text-gray-900 border-gray-300 hover:border-gray-900 hover:bg-gray-50 hover:shadow-sm'
+                            : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
                         }`}
                         style={{
                           animationDelay: `${index * 50}ms`,
                           animation: loadingSlots ? 'none' : 'fadeIn 0.3s ease-out forwards'
                         }}
-                        title={!slot.available ? 'Time slot unavailable - conflicts with existing booking or business hours' : `Available for ${formatDuration(totalDuration)} service`}
+                        title={!slot.available && slot.bookingId ? `Would overlap with existing booking` : !slot.available ? 'Outside business hours or service would extend beyond closing time' : `Available for ${formatDuration(totalDuration)} service`}
                       >
-                        <Clock className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
-                        {slot.time}
-                        {!slot.available && slot.bookingId && (
-                          <span className="ml-1 text-xs opacity-75">(Booked)</span>
-                        )}
+                        <Clock className="w-4 h-4 flex-shrink-0" />
+                        <span className="whitespace-nowrap">{slot.time}</span>
                       </button>
                     ))}
                   </div>
@@ -408,6 +567,71 @@ export default function BookPage() {
         </div>
       </div>
 
+      {/* Booking Summary */}
+      {formData.selectedServices.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-gray-700" />
+            Booking Summary
+          </h3>
+          <div className="space-y-4">
+            {selectedServices.map((service) => {
+              const serviceAddons = formData.selectedAddons[service.id] || [];
+              const addonTotal = serviceAddons.reduce((total, addonId) => {
+                const addon = service.addons?.find(a => a.id === addonId);
+                return total + (addon?.price || 0);
+              }, 0);
+              
+              return (
+                <div key={service.id} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900">{service.name}</h4>
+                      <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatDuration(service.duration)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          {formatCurrency(service.price)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {serviceAddons.length > 0 && (
+                    <div className="ml-4 space-y-1 mt-2">
+                      {serviceAddons.map(addonId => {
+                        const addon = service.addons?.find(a => a.id === addonId);
+                        return addon ? (
+                          <div key={addonId} className="flex justify-between text-xs text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <span className="w-1 h-1 bg-black rounded-full"></span>
+                              {addon.name}
+                            </span>
+                            <span>+{formatCurrency(addon.price)}</span>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="border-t border-gray-300 mt-4 pt-4 flex justify-between items-center">
+            <div>
+              <p className="text-sm text-gray-600">Total Duration</p>
+              <p className="text-lg font-bold text-black">{formatDuration(totalDuration)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-600">Total Price</p>
+              <p className="text-2xl font-bold text-black">{formatCurrency(totalPrice)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-4">
         <button
           onClick={handleBack}
@@ -418,7 +642,7 @@ export default function BookPage() {
         <button
           onClick={handleNext}
           disabled={!formData.selectedTime}
-          className="flex-1 bg-rose-600 text-white py-3 rounded-lg font-semibold hover:bg-rose-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
           Continue to Details
         </button>
@@ -429,8 +653,8 @@ export default function BookPage() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Information</h2>
-        <p className="text-gray-700">Please provide your contact details</p>
+        <h2 className="text-3xl font-serif font-bold text-black mb-2 tracking-tight">Your Information</h2>
+        <p className="text-gray-600">Please provide your contact details</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-6">
@@ -443,13 +667,13 @@ export default function BookPage() {
             type="text"
             value={formData.firstName}
             onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-900 placeholder-gray-500 bg-white ${
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
               errors.firstName ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Enter your first name"
           />
           {errors.firstName && (
-            <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>
+            <p className="text-gray-900 text-sm mt-1">{errors.firstName}</p>
           )}
         </div>
 
@@ -462,13 +686,13 @@ export default function BookPage() {
             type="text"
             value={formData.lastName}
             onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-900 placeholder-gray-500 bg-white ${
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
               errors.lastName ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Enter your last name"
           />
           {errors.lastName && (
-            <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>
+            <p className="text-gray-900 text-sm mt-1">{errors.lastName}</p>
           )}
         </div>
 
@@ -481,13 +705,13 @@ export default function BookPage() {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-900 placeholder-gray-500 bg-white ${
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
               errors.email ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Enter your email address"
           />
           {errors.email && (
-            <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+            <p className="text-gray-900 text-sm mt-1">{errors.email}</p>
           )}
         </div>
 
@@ -500,13 +724,13 @@ export default function BookPage() {
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-900 placeholder-gray-500 bg-white ${
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
               errors.phone ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Enter your phone number"
           />
           {errors.phone && (
-            <p className="text-red-600 text-sm mt-1">{errors.phone}</p>
+            <p className="text-gray-900 text-sm mt-1">{errors.phone}</p>
           )}
         </div>
       </div>
@@ -520,7 +744,7 @@ export default function BookPage() {
           value={formData.notes}
           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
           rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-900 placeholder-gray-500 bg-white"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white"
           placeholder="Any special requests or notes for your appointment..."
         />
       </div>
@@ -551,18 +775,28 @@ export default function BookPage() {
       </div>
 
       {/* Important Information */}
-      <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
-        <h4 className="font-semibold text-rose-900 mb-3 flex items-center gap-2">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h4 className="font-semibold text-black mb-3 flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
           Important Information
         </h4>
-        <div className="space-y-2 text-sm text-rose-800">
+        <div className="space-y-2 text-sm text-gray-900">
           <p>• Please arrive 10 minutes early for your appointment</p>
           <p>• 24-hour cancellation policy applies</p>
           <p>• Payment is due at time of service</p>
           <p>• Bring any required items as specified for your service</p>
         </div>
       </div>
+
+      {bookingError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-red-800 font-medium">Booking Failed</p>
+            <p className="text-red-700 text-sm mt-1">{bookingError}</p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-4">
         <button
@@ -574,7 +808,7 @@ export default function BookPage() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 bg-rose-600 text-white py-3 rounded-lg font-semibold hover:bg-rose-700 disabled:bg-rose-400 transition-colors"
+          className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-400 transition-colors"
         >
           {loading ? 'Booking...' : 'Confirm Booking'}
         </button>
@@ -587,9 +821,9 @@ export default function BookPage() {
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
         <div className="text-green-600 text-2xl">✓</div>
       </div>
-      <h2 className="text-3xl font-bold text-gray-900">Booking Confirmed!</h2>
+      <h2 className="text-3xl font-bold text-gray-900">Booking Submitted!</h2>
       <p className="text-xl text-gray-700">
-        Thank you, {formData.firstName}! Your appointment has been successfully booked.
+        Thank you, {formData.firstName}! Your appointment request has been successfully submitted.
       </p>
       
       <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-left max-w-md mx-auto">
@@ -615,30 +849,26 @@ export default function BookPage() {
       </div>
 
       <div className="space-y-4">
-        <p className="text-gray-700">
-          A confirmation email has been sent to {formData.email}
-        </p>
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg max-w-2xl mx-auto">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <p className="font-semibold mb-1">Pending Confirmation</p>
+              <p>Your booking request is pending vendor confirmation. You will receive a confirmation email at <span className="font-semibold">{formData.email}</span> once your appointment has been confirmed.</p>
+            </div>
+          </div>
+        </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/"
-            className="bg-rose-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-rose-700 transition-colors text-center"
+            className="bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors text-center"
           >
             Back to Home
           </Link>
           <button
             onClick={() => {
-              setStep(1);
-              setFormData({
-                firstName: '',
-                lastName: '',
-                email: '',
-                phone: '',
-                selectedServices: [],
-                selectedAddons: {},
-                appointmentDate: new Date(),
-                selectedTime: '',
-                notes: ''
-              });
+              localStorage.removeItem('bookingSelections');
+              router.push('/book');
             }}
             className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
           >
@@ -650,17 +880,17 @@ export default function BookPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between sm:justify-start h-16">
-            <Link href="/" className="flex items-center text-rose-600 hover:text-rose-700">
+            <Link href="/" className="flex items-center text-gray-700 hover:text-black transition-colors">
               <ArrowLeft className="w-5 h-5 mr-2" />
-              <span className="hidden sm:inline">Back to Home</span>
-              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline font-medium">Back to Home</span>
+              <span className="sm:hidden font-medium">Back</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-bold text-rose-600 sm:ml-8">
+            <h1 className="text-xl sm:text-2xl font-serif font-bold text-black sm:ml-8 tracking-tight">
               <span className="hidden sm:inline">Book Appointment</span>
               <span className="sm:hidden">Book</span>
             </h1>
@@ -678,7 +908,7 @@ export default function BookPage() {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
                       step >= stepNumber
-                        ? 'bg-rose-600 text-white'
+                        ? 'bg-black text-white'
                         : 'bg-gray-200 text-gray-700'
                     }`}
                   >
@@ -686,7 +916,7 @@ export default function BookPage() {
                   </div>
                   <span
                     className={`ml-2 text-xs sm:text-sm font-medium ${
-                      step >= stepNumber ? 'text-rose-600' : 'text-gray-600'
+                      step >= stepNumber ? 'text-black' : 'text-gray-600'
                     }`}
                   >
                     {stepNumber === 1 ? 'Services' : stepNumber === 2 ? 'Date & Time' : 'Details'}
@@ -695,7 +925,7 @@ export default function BookPage() {
                     <div className="flex-1 h-1 bg-gray-200 mx-2 sm:mx-4 rounded min-w-[20px] sm:min-w-[40px]">
                       <div
                         className={`h-full rounded transition-all duration-300 ${
-                          step > stepNumber ? 'bg-rose-600 w-full' : 'bg-gray-200 w-0'
+                          step > stepNumber ? 'bg-black w-full' : 'bg-gray-200 w-0'
                         }`}
                       />
                     </div>

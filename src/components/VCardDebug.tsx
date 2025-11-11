@@ -13,7 +13,7 @@ export function VCardDebug() {
     <div className="mt-4">
       <button
         onClick={() => setShowDebug(!showDebug)}
-        className="flex items-center gap-2 text-sm text-gray-600 hover:text-rose-600 transition-colors"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-600 transition-colors"
       >
         {showDebug ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         {showDebug ? 'Hide' : 'Show'} QR Code Content

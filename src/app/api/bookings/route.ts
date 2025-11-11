@@ -1,87 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCalendarEvent } from '@/lib/google-calendar';
-import { Booking, BookingFormData } from '@/types';
-import { 
-  generateBookingId, 
-  generateCustomerId, 
-  calculateTotalPrice, 
-  calculateTotalDuration,
-  getServices 
-} from '@/lib/utils';
-import { format, addMinutes } from 'date-fns';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export async function POST(request: NextRequest) {
   try {
-    const formData: BookingFormData = await request.json();
+    const body = await request.json();
     
-    // Validate required fields
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone ||
-        !formData.selectedServices.length || !formData.appointmentDate || !formData.selectedTime) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // Get services
-    const services = getServices();
-    const selectedServices = services.filter(service => 
-      formData.selectedServices.includes(service.id)
-    );
-
-    if (selectedServices.length === 0) {
-      return NextResponse.json({ error: 'Invalid services selected' }, { status: 400 });
-    }
-
-    // Calculate pricing and duration including addons
-    const totalPrice = calculateTotalPrice(formData.selectedServices, formData.selectedAddons);
-    const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons);
-
-    // Calculate end time
-    const [hours, minutes] = formData.selectedTime.split(':').map(Number);
-    const startTime = new Date(formData.appointmentDate);
-    startTime.setHours(hours, minutes, 0, 0);
-    const endTime = addMinutes(startTime, totalDuration);
-
-    // Create booking object
-    const booking: Booking = {
-      id: generateBookingId(),
-      customerId: generateCustomerId(),
-      customer: {
-        id: generateCustomerId(),
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        createdAt: new Date()
+    const response = await fetch(`${API_URL}/bookings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      serviceIds: formData.selectedServices,
-      services: selectedServices,
-      appointmentDate: new Date(formData.appointmentDate),
-      startTime: formData.selectedTime,
-      endTime: format(endTime, 'HH:mm'),
-      totalPrice,
-      finalPrice: totalPrice,
-      status: 'pending',
-      notes: formData.notes || '',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+      body: JSON.stringify(body),
+    });
 
-    // Create Google Calendar event
-    try {
-      const eventId = await createCalendarEvent(booking);
-      if (eventId) {
-        booking.googleCalendarEventId = eventId;
-      }
-    } catch (error) {
-      console.error('Failed to create calendar event:', error);
-      // Continue with booking creation even if calendar fails
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.message || 'Failed to create booking' },
+        { status: response.status }
+      );
     }
 
-    // In a real application, you would save this to a database
-    // For now, we'll return the booking data to be saved in localStorage
-    
     return NextResponse.json({ 
       success: true, 
-      booking,
+      booking: data,
       message: 'Booking created successfully' 
     });
 
@@ -94,11 +38,31 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // In a real application, you would fetch bookings from a database
-    // For now, return an empty array as bookings are stored in localStorage
-    return NextResponse.json({ bookings: [] });
+    const token = request.headers.get('authorization');
+    
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = token;
+    }
+    
+    const response = await fetch(`${API_URL}/bookings`, {
+      headers,
+    });
+    const bookings = await response.json();
+    
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: bookings.message || 'Failed to fetch bookings' },
+        { status: response.status }
+      );
+    }
+    
+    return NextResponse.json({ bookings });
   } catch (error) {
     console.error('Failed to fetch bookings:', error);
     return NextResponse.json(

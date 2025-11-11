@@ -12,7 +12,7 @@ export interface Service {
   description: string;
   duration: number; // in minutes
   price: number;
-  category: 'hair' | 'makeup' | 'combo';
+  category: 'hair' | 'braids' | 'sew-in' | 'makeup' | 'combo';
   image?: string;
   requirements?: string[];
   includes?: string[];

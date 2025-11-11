@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const playfair = Playfair_Display({ 
+  subsets: ["latin"],
+  variable: '--font-playfair',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: "Oma Khair - Hair & Makeup Booking",
-  description: "Book professional hair and makeup appointments with Oma Khair. Specializing in frontal installation, braids, wig making, and more.",
+  title: "LaidbyOma - Professional Hair & Beauty Services",
+  description: "Premier hair and beauty booking platform. Specializing in frontal installation, braids, wig making, and more.",
   keywords: "hair styling, makeup, braids, frontal installation, wig making, hair coloring",
 };
 
@@ -17,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

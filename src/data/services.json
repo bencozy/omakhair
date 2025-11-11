@@ -1,183 +1,849 @@
 {
   "services": [
     {
-      "id": "frontal-install",
-      "name": "Frontal Installation",
-      "description": "Expert frontal lace installation with seamless hairline blending for a natural look",
-      "duration": 180,
-      "price": 250,
+      "id": "frontal-ponytail",
+      "name": "Frontal Ponytail",
+      "description": "Please come with your hair as straight as possible. NEW LACES ONLY UNLESS THE ORIGINAL INSTALL WAS DONE HERE! PLEASE DROP YOUR LACE OFF THE DAY BEFORE BY 5PM.",
+      "duration": 90,
+      "price": 180,
       "category": "hair",
-      "requirements": ["Bring your own frontal", "Hair should be washed prior"],
-      "includes": ["Hairline customization", "Basic styling", "Aftercare instructions"],
       "popular": true,
+      "requirements": ["Hair as straight as possible", "New laces only (unless original install was done here)", "Drop off lace day before by 5PM"],
+      "includes": ["Frontal ponytail installation", "Basic styling"],
       "addons": [
         {
-          "id": "frontal-deep-style",
-          "name": "Premium Styling",
-          "description": "Advanced curling, straightening, or wave pattern",
-          "price": 35,
-          "duration": 30
+          "id": "color-tracks",
+          "name": "Add tracks of color provided by client",
+          "description": "Additional color tracks from client",
+          "price": 10,
+          "duration": 10
         },
         {
-          "id": "frontal-color-blend",
-          "name": "Color Blending",
-          "description": "Custom color matching and blending service",
-          "price": 50,
-          "duration": 45
+          "id": "bob-cut",
+          "name": "Bob cut",
+          "description": "Professional bob cut styling",
+          "price": 20,
+          "duration": 15
         },
         {
-          "id": "frontal-baby-hairs",
-          "name": "Baby Hair Styling",
-          "description": "Detailed baby hair cutting and styling",
-          "price": 25,
+          "id": "braids-on-wig",
+          "name": "Braids on a wig",
+          "description": "Braiding service on wig",
+          "price": 10,
+          "duration": 15
+        },
+        {
+          "id": "crimps",
+          "name": "Crimps",
+          "description": "Crimp styling",
+          "price": 20,
           "duration": 20
-        }
-      ]
-    },
-    {
-      "id": "frontal-reinstall",
-      "name": "Frontal Re-Installation",
-      "description": "Professional removal and fresh installation of existing frontal lace",
-      "duration": 150,
-      "price": 180,
-      "category": "hair",
-      "image": "/images/services/frontal-reinstall.jpg",
-      "requirements": ["Existing frontal in good condition"],
-      "includes": ["Safe removal", "Cleaning", "Fresh installation", "Touch-up styling"]
-    },
-    {
-      "id": "closure-install",
-      "name": "Closure Installation",
-      "description": "Seamless closure installation for natural parting and versatile styling",
-      "duration": 120,
-      "price": 200,
-      "category": "hair",
-      "image": "/images/services/closure-install.jpg",
-      "requirements": ["Bring your own closure", "Clean scalp required"],
-      "includes": ["Blending", "Parting customization", "Basic styling"]
-    },
-    {
-      "id": "corn-rows",
-      "name": "Cornrows",
-      "description": "Traditional protective cornrow braiding in various patterns and designs",
-      "duration": 120,
-      "price": 80,
-      "category": "hair",
-      "image": "/images/services/corn-rows.jpg",
-      "requirements": ["Hair length minimum 3 inches"],
-      "includes": ["Pattern consultation", "Scalp treatment", "Edge styling"]
-    },
-    {
-      "id": "box-braids",
-      "name": "Box Braids",
-      "description": "Classic box braids with premium synthetic or human hair extensions",
-      "duration": 300,
-      "price": 180,
-      "category": "hair",
-      "requirements": ["Hair extensions included", "6-8 hours commitment"],
-      "includes": ["Hair washing", "Scalp treatment", "Basic styling", "Maintenance tips"],
-      "popular": true,
-      "addons": [
+        },
         {
-          "id": "premium-hair",
-          "name": "Human Hair Upgrade",
-          "description": "Upgrade to 100% human hair extensions",
-          "price": 80,
+          "id": "curls",
+          "name": "Curls",
+          "description": "Curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "fish-tail",
+          "name": "Fish tail",
+          "description": "Fish tail styling",
+          "price": 0,
+          "duration": 10
+        },
+        {
+          "id": "layered-curls",
+          "name": "Layered curls",
+          "description": "Layered curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "left-side-part",
+          "name": "Left side part",
+          "description": "Free for customization purpose",
+          "price": 0,
           "duration": 0
         },
         {
-          "id": "ombre-color",
-          "name": "Ombre/Color Effect",
-          "description": "Two-tone or gradient color braiding",
-          "price": 40,
-          "duration": 30
+          "id": "middle-part",
+          "name": "Middle part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
         },
         {
-          "id": "scalp-massage",
-          "name": "Scalp Massage Treatment",
-          "description": "Relaxing scalp massage with essential oils",
+          "id": "pinned-curls",
+          "name": "Pinned curls (clips included)",
+          "description": "Pinned curl styling with clips",
           "price": 25,
-          "duration": 15
+          "duration": 20
+        },
+        {
+          "id": "right-side-part",
+          "name": "Right side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "swoop",
+          "name": "Swoop",
+          "description": "Swoop styling",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "up-and-down",
+          "name": "Up and down",
+          "description": "Up and down styling",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "up-do-wig",
+          "name": "Up do on a regular wig install",
+          "description": "Up do styling on regular wig",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "wand-curls",
+          "name": "Wand curls",
+          "description": "Wand curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "widows-peak",
+          "name": "Widows peak",
+          "description": "For customization purposes",
+          "price": 0,
+          "duration": 0
         }
       ]
     },
     {
-      "id": "twist-braids",
-      "name": "Twist Braids",
-      "description": "Elegant twist braids for a sophisticated protective style",
-      "duration": 240,
-      "price": 150,
-      "category": "hair",
-      "image": "/images/services/twist-braids.jpg",
-      "requirements": ["Natural hair minimum 4 inches"],
-      "includes": ["Pre-treatment", "Professional styling", "Finishing touches"]
-    },
-    {
-      "id": "wig-making",
-      "name": "Custom Wig Creation",
-      "description": "Bespoke wig crafted from premium human hair with custom cap construction",
-      "duration": 480,
-      "price": 450,
-      "category": "hair",
-      "image": "/images/services/wig-making.jpg",
-      "requirements": ["Consultation required", "Hair selection appointment", "Multiple fittings"],
-      "includes": ["Cap measurement", "Hair selection", "Construction", "Styling", "Care kit"],
-      "premium": true
-    },
-    {
-      "id": "wig-revamping",
-      "name": "Wig Restoration & Styling",
-      "description": "Complete wig transformation with washing, conditioning, and restyling",
-      "duration": 150,
-      "price": 120,
-      "category": "hair",
-      "image": "/images/services/wig-revamping.jpg",
-      "requirements": ["Bring existing wig", "Specify desired style"],
-      "includes": ["Deep cleaning", "Conditioning treatment", "Cut & style", "Heat protection"]
-    },
-    {
-      "id": "hair-coloring",
-      "name": "Hair Coloring & Highlights",
-      "description": "Professional color services including highlights, lowlights, and full color",
-      "duration": 180,
+      "id": "double-frontal-ponytail",
+      "name": "Double Frontal Ponytail",
+      "description": "Please come with your hair straightened!! NEW LACES ONLY UNLESS THE ORIGINAL INSTALL WAS DONE HERE! PLEASE DROP YOUR LACE OFF THE DAY BEFORE BY 5PM.",
+      "duration": 120,
       "price": 200,
       "category": "hair",
-      "image": "/images/services/hair-coloring.jpg",
-      "requirements": ["Consultation required", "Patch test 48hrs prior"],
-      "includes": ["Color consultation", "Application", "Toning", "Styling", "Color care products"]
+      "popular": true,
+      "requirements": ["Hair straightened", "New laces only (unless original install was done here)", "Drop off lace day before by 5PM"],
+      "includes": ["Double frontal ponytail installation", "Basic styling"],
+      "addons": [
+        {
+          "id": "color-tracks",
+          "name": "Add tracks of color provided by client",
+          "description": "Additional color tracks from client",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "bob-cut",
+          "name": "Bob cut",
+          "description": "Professional bob cut styling",
+          "price": 20,
+          "duration": 15
+        },
+        {
+          "id": "braids-on-wig",
+          "name": "Braids on a wig",
+          "description": "Braiding service on wig",
+          "price": 10,
+          "duration": 15
+        },
+        {
+          "id": "crimps",
+          "name": "Crimps",
+          "description": "Crimp styling",
+          "price": 20,
+          "duration": 20
+        },
+        {
+          "id": "curls",
+          "name": "Curls",
+          "description": "Curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "fish-tail",
+          "name": "Fish tail",
+          "description": "Fish tail styling",
+          "price": 0,
+          "duration": 10
+        },
+        {
+          "id": "layered-curls",
+          "name": "Layered curls",
+          "description": "Layered curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "left-side-part",
+          "name": "Left side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "middle-part",
+          "name": "Middle part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "pinned-curls",
+          "name": "Pinned curls (clips included)",
+          "description": "Pinned curl styling with clips",
+          "price": 25,
+          "duration": 20
+        },
+        {
+          "id": "right-side-part",
+          "name": "Right side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "swoop",
+          "name": "Swoop",
+          "description": "Swoop styling",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "up-and-down",
+          "name": "Up and down",
+          "description": "Up and down styling",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "up-do-wig",
+          "name": "Up do on a regular wig install",
+          "description": "Up do styling on regular wig",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "wand-curls",
+          "name": "Wand curls",
+          "description": "Wand curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "widows-peak",
+          "name": "Widows peak",
+          "description": "For customization purposes",
+          "price": 0,
+          "duration": 0
+        }
+      ]
     },
     {
-      "id": "silk-press",
-      "name": "Silk Press",
-      "description": "Smooth, silky hair transformation with heat protection and lasting shine",
+      "id": "frontal-quick-weave",
+      "name": "Frontal Quick Weave",
+      "description": "YOUR LACE MUST BE NEW! UNLESS THE ORIGINAL INSTALL WAS DONE HERE. A frontal and 2-3 bundles are needed for this look. Your hair will be braided down, a cap will be applied, your bundles will be glued with track glue and your frontal will be glued with adhesive.",
+      "duration": 140,
+      "price": 140,
+      "category": "hair",
+      "requirements": ["New lace (unless original install was done here)", "Frontal and 2-3 bundles needed"],
+      "includes": ["Hair braiding", "Cap application", "Bundle installation with track glue", "Frontal installation with adhesive"],
+      "addons": [
+        {
+          "id": "color-tracks",
+          "name": "Add tracks of color provided by client",
+          "description": "Additional color tracks from client",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "bob-cut",
+          "name": "Bob cut",
+          "description": "Professional bob cut styling",
+          "price": 20,
+          "duration": 15
+        },
+        {
+          "id": "braids-on-wig",
+          "name": "Braids on a wig",
+          "description": "Braiding service on wig",
+          "price": 10,
+          "duration": 15
+        },
+        {
+          "id": "crimps",
+          "name": "Crimps",
+          "description": "Crimp styling",
+          "price": 20,
+          "duration": 20
+        },
+        {
+          "id": "curls",
+          "name": "Curls",
+          "description": "Curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "fish-tail",
+          "name": "Fish tail",
+          "description": "Fish tail styling",
+          "price": 0,
+          "duration": 10
+        },
+        {
+          "id": "layered-curls",
+          "name": "Layered curls",
+          "description": "Layered curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "left-side-part",
+          "name": "Left side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "middle-part",
+          "name": "Middle part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "pinned-curls",
+          "name": "Pinned curls (clips included)",
+          "description": "Pinned curl styling with clips",
+          "price": 25,
+          "duration": 20
+        },
+        {
+          "id": "right-side-part",
+          "name": "Right side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "swoop",
+          "name": "Swoop",
+          "description": "Swoop styling",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "up-and-down",
+          "name": "Up and down",
+          "description": "Up and down styling",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "up-do-wig",
+          "name": "Up do on a regular wig install",
+          "description": "Up do styling on regular wig",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "wand-curls",
+          "name": "Wand curls",
+          "description": "Wand curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "widows-peak",
+          "name": "Widows peak",
+          "description": "For customization purposes",
+          "price": 0,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": "closure-quickweave",
+      "name": "Closure Quickweave",
+      "description": "Professional closure quick weave installation for a natural look.",
+      "duration": 90,
+      "price": 120,
+      "category": "hair",
+      "requirements": ["Bring closure and bundles"],
+      "includes": ["Closure quick weave installation", "Basic styling"],
+      "addons": [
+        {
+          "id": "color-tracks",
+          "name": "Add tracks of color provided by client",
+          "description": "Additional color tracks from client",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "bob-cut",
+          "name": "Bob cut",
+          "description": "Professional bob cut styling",
+          "price": 20,
+          "duration": 15
+        },
+        {
+          "id": "braids-on-wig",
+          "name": "Braids on a wig",
+          "description": "Braiding service on wig",
+          "price": 10,
+          "duration": 15
+        },
+        {
+          "id": "crimps",
+          "name": "Crimps",
+          "description": "Crimp styling",
+          "price": 20,
+          "duration": 20
+        },
+        {
+          "id": "curls",
+          "name": "Curls",
+          "description": "Curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "fish-tail",
+          "name": "Fish tail",
+          "description": "Fish tail styling",
+          "price": 0,
+          "duration": 10
+        },
+        {
+          "id": "layered-curls",
+          "name": "Layered curls",
+          "description": "Layered curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "left-side-part",
+          "name": "Left side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "middle-part",
+          "name": "Middle part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "pinned-curls",
+          "name": "Pinned curls (clips included)",
+          "description": "Pinned curl styling with clips",
+          "price": 25,
+          "duration": 20
+        },
+        {
+          "id": "right-side-part",
+          "name": "Right side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "swoop",
+          "name": "Swoop",
+          "description": "Swoop styling",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "up-and-down",
+          "name": "Up and down",
+          "description": "Up and down styling",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "up-do-wig",
+          "name": "Up do on a regular wig install",
+          "description": "Up do styling on regular wig",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "wand-curls",
+          "name": "Wand curls",
+          "description": "Wand curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "widows-peak",
+          "name": "Widows peak",
+          "description": "For customization purposes",
+          "price": 0,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": "quick-weave-leave-out",
+      "name": "Quick Weave with Leave Out",
+      "description": "Quick weave installation with natural hair leave out for a seamless blend.",
+      "duration": 90,
+      "price": 100,
+      "category": "hair",
+      "requirements": ["Bring bundles"],
+      "includes": ["Quick weave with leave out installation", "Basic styling"],
+      "addons": [
+        {
+          "id": "color-tracks",
+          "name": "Add tracks of color provided by client",
+          "description": "Additional color tracks from client",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "bob-cut",
+          "name": "Bob cut",
+          "description": "Professional bob cut styling",
+          "price": 20,
+          "duration": 15
+        },
+        {
+          "id": "braids-on-wig",
+          "name": "Braids on a wig",
+          "description": "Braiding service on wig",
+          "price": 10,
+          "duration": 15
+        },
+        {
+          "id": "crimps",
+          "name": "Crimps",
+          "description": "Crimp styling",
+          "price": 20,
+          "duration": 20
+        },
+        {
+          "id": "curls",
+          "name": "Curls",
+          "description": "Curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "fish-tail",
+          "name": "Fish tail",
+          "description": "Fish tail styling",
+          "price": 0,
+          "duration": 10
+        },
+        {
+          "id": "layered-curls",
+          "name": "Layered curls",
+          "description": "Layered curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "left-side-part",
+          "name": "Left side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "middle-part",
+          "name": "Middle part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "pinned-curls",
+          "name": "Pinned curls (clips included)",
+          "description": "Pinned curl styling with clips",
+          "price": 25,
+          "duration": 20
+        },
+        {
+          "id": "right-side-part",
+          "name": "Right side part",
+          "description": "Free for customization purpose",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "swoop",
+          "name": "Swoop",
+          "description": "Swoop styling",
+          "price": 0,
+          "duration": 0
+        },
+        {
+          "id": "up-and-down",
+          "name": "Up and down",
+          "description": "Up and down styling",
+          "price": 10,
+          "duration": 10
+        },
+        {
+          "id": "up-do-wig",
+          "name": "Up do on a regular wig install",
+          "description": "Up do styling on regular wig",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "wand-curls",
+          "name": "Wand curls",
+          "description": "Wand curl styling",
+          "price": 15,
+          "duration": 20
+        },
+        {
+          "id": "widows-peak",
+          "name": "Widows peak",
+          "description": "For customization purposes",
+          "price": 0,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": "small-bob-knotless",
+      "name": "Small Bob Knotless Braids",
+      "description": "Small size bob knotless braids for a neat, protective style.",
+      "duration": 270,
+      "price": 130,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "smedium-bob-knotless",
+      "name": "Smedium Bob Knotless Braids",
+      "description": "Small-to-medium size bob knotless braids.",
+      "duration": 210,
+      "price": 150,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "medium-bob-knotless",
+      "name": "Medium Bob Knotless Braids",
+      "description": "Medium size bob knotless braids.",
+      "duration": 210,
+      "price": 100,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "smedium-bohemian-knotless",
+      "name": "Smedium Bohemian Knotless Braids",
+      "description": "Small-to-medium bohemian knotless braids. This is 4-5 pieces of curly hair added to one braid. 2 bundles recommended. Only morning appointments!",
+      "duration": 420,
+      "price": 200,
+      "category": "braids",
+      "popular": true,
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "2 bundles recommended", "Morning appointments only"],
+      "includes": ["Braiding service", "Curly hair integration", "Edge styling"]
+    },
+    {
+      "id": "medium-bohemian-knotless",
+      "name": "Medium Bohemian Knotless Braids",
+      "description": "Medium bohemian knotless braids. This is 4-5 pieces of curly hair added to one braid. 2 bundles recommended. Only morning appointments!",
+      "duration": 390,
+      "price": 180,
+      "category": "braids",
+      "popular": true,
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "2 bundles recommended", "Morning appointments only"],
+      "includes": ["Braiding service", "Curly hair integration", "Edge styling"]
+    },
+    {
+      "id": "small-bohemian",
+      "name": "Small Bohemian Braids",
+      "description": "Small bohemian braids. This is 4-5 pieces of curly hair added to one braid. 2 bundles recommended. Only morning appointments!",
+      "duration": 540,
+      "price": 250,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "2 bundles recommended", "Morning appointments only"],
+      "includes": ["Braiding service", "Curly hair integration", "Edge styling"]
+    },
+    {
+      "id": "feed-in-4-6",
+      "name": "4-6 Feed In Braids",
+      "description": "4-6 feed in braids. Standard length to waist length.",
       "duration": 120,
-      "price": 85,
-      "category": "hair",
-      "image": "/images/services/silk-press.jpg",
-      "requirements": ["Clean, detangled hair preferred"],
-      "includes": ["Wash & condition", "Heat protectant", "Blow dry", "Flat iron", "Finishing serum"]
+      "price": 80,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
     },
     {
-      "id": "gel-slick-back",
-      "name": "Gel Slick Back",
-      "description": "Sleek, polished look with long-lasting hold and edge control",
-      "duration": 45,
-      "price": 35,
-      "category": "hair",
-      "image": "/images/services/gel-slick-back.jpg",
-      "requirements": ["Recently washed hair recommended"],
-      "includes": ["Edge laying", "Styling gel application", "Finishing touches"]
+      "id": "feed-in-8-10",
+      "name": "8-10 Feed In Braids",
+      "description": "8-10 feed in braids. Standard length to waist length.",
+      "duration": 180,
+      "price": 100,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
     },
     {
-      "id": "wash-blow-dry",
-      "name": "Wash & Blow Dry",
-      "description": "Professional hair washing and blow dry service with styling",
-      "duration": 60,
-      "price": 45,
-      "category": "hair",
-      "image": "/images/services/wash-blow-dry.jpg",
-      "requirements": ["None"],
-      "includes": ["Shampoo", "Deep conditioning", "Blow dry", "Basic styling"]
+      "id": "alicia-key-braids",
+      "name": "Alicia Key Braids",
+      "description": "Alicia Key style braids. Standard length to waist length.",
+      "duration": 270,
+      "price": 150,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "fulani-braids",
+      "name": "Fulani Braids",
+      "description": "Traditional Fulani braids. Only morning appointments!",
+      "duration": 360,
+      "price": 170,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "Morning appointments only"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "flip-over-fulani",
+      "name": "Flip Over Fulani Braids",
+      "description": "Flip over style Fulani braids. Only morning appointments!",
+      "duration": 360,
+      "price": 170,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "Morning appointments only"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "fulani-sew-in",
+      "name": "Fulani Sew In",
+      "description": "Fulani style with sew in. This style requires 2-3 bundles.",
+      "duration": 270,
+      "price": 150,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "2-3 bundles required"],
+      "includes": ["Braiding service", "Sew in installation", "Edge styling"]
+    },
+    {
+      "id": "lemonade-fulani",
+      "name": "Lemonade Fulani Braids",
+      "description": "Lemonade style Fulani braids.",
+      "duration": 360,
+      "price": 200,
+      "category": "braids",
+      "popular": true,
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "lemonade-fulani-bob",
+      "name": "Lemonade Fulani Bob Braids",
+      "description": "Lemonade style Fulani bob braids.",
+      "duration": 300,
+      "price": 150,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "fulani-sew-in-half-wig",
+      "name": "Fulani Sew In (Half Wig)",
+      "description": "Fulani style sew in as half wig.",
+      "duration": 240,
+      "price": 100,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Half wig installation", "Edge styling"]
+    },
+    {
+      "id": "small-goddess-braids",
+      "name": "Small Goddess Braids",
+      "description": "Small goddess braids. Standard length to waist length. Only morning appointments!",
+      "duration": 450,
+      "price": 250,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "Morning appointments only"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "smedium-goddess-braids",
+      "name": "Smedium Goddess Braids",
+      "description": "Small-to-medium goddess braids. Standard length to waist length. Only morning appointments!",
+      "duration": 360,
+      "price": 200,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "Morning appointments only"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "medium-goddess-braids",
+      "name": "Medium Goddess Braids",
+      "description": "Medium goddess braids. Standard length to waist length. Only morning appointments!",
+      "duration": 330,
+      "price": 150,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "Morning appointments only"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "large-goddess-braids",
+      "name": "Large Goddess Braids",
+      "description": "Large goddess braids. Standard length to waist length.",
+      "duration": 270,
+      "price": 100,
+      "category": "braids",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)"],
+      "includes": ["Braiding service", "Edge styling"]
+    },
+    {
+      "id": "classic-sew-in",
+      "name": "Classic Sew In",
+      "description": "Classic sew in style. This style requires 3 bundles.",
+      "duration": 210,
+      "price": 100,
+      "category": "sew-in",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "3 bundles required"],
+      "includes": ["Cornrow braiding", "Sew in installation", "Basic styling"]
+    },
+    {
+      "id": "versatile-sew-in",
+      "name": "Versatile Sew In",
+      "description": "Versatile sew in style. This style requires 2-3 bundles.",
+      "duration": 210,
+      "price": 100,
+      "category": "sew-in",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "2-3 bundles required"],
+      "includes": ["Cornrow braiding", "Sew in installation", "Basic styling"]
+    },
+    {
+      "id": "flip-over-sew-in",
+      "name": "Flip Over Sew In",
+      "description": "Flip over sew in style. This style requires 3 bundles.",
+      "duration": 210,
+      "price": 100,
+      "category": "sew-in",
+      "requirements": ["Hair must be freshly washed and blow-dried", "No oils or products (grease free)", "3 bundles required"],
+      "includes": ["Cornrow braiding", "Sew in installation", "Basic styling"]
     }
   ],
   "businessHours": {
@@ -193,16 +859,24 @@
     "minimumBookingGap": 0,
     "maxAdvanceBookingDays": 30,
     "defaultServiceDuration": 120,
-    "taxRate": 0.08,
-    "cancellationPolicyHours": 24,
+    "taxRate": 0,
+    "cancellationPolicyHours": 48,
+    "depositAmount": 30,
     "lunchBreak": null,
     "bufferTime": 0,
-    "allowSameDayBooking": true
+    "allowSameDayBooking": true,
+    "sundayPremiumFee": 20,
+    "emergencyAppointmentFee": 30
   },
   "policies": {
-    "cancellation": "24-hour cancellation policy. Late cancellations may incur a fee.",
-    "lateness": "Please arrive 10 minutes early. Late arrivals may result in shortened service time.",
-    "payment": "Payment required at time of service. Cash, card, and digital payments accepted.",
-    "consultation": "Free consultation available for custom services and color treatments."
+    "welcome": "Thank you for taking an interest in booking with Laidbyoma! By booking with us you agree to the policies listed below.",
+    "location": "Located in Dallas, Texas. Open for studio and home services. Address will be sent 48 hours prior to appointment. It is vital that your email is correct. Plus ones are not allowed.",
+    "booking": "All appointments are released on the 15th of every month for the following month at 7pm.",
+    "deposit": "A non-refundable deposit of $30 is required to secure your booking. The remaining balance will be collected in cash. There is a no refund policy.",
+    "cancellation": "Cancellations/rescheduling must be done at least 48 hours prior to appointment or you will be charged. If you cancel your appointment 24 hours before, same day cancellation or no show, you will be charged 50% of the remaining fee.",
+    "lateness": "A grace period of 10 minutes will be allowed. After 10 minutes $10 will be charged and for every 5 minutes an additional $5 will be charged. Any later than 25 minutes will result in appointment being cancelled with no refund of deposit.",
+    "premium": "Sunday slots are premium with an additional fee of $20. Emergency appointments are an additional fee of $30. Any appointments released that are not on the booking site will be classed as a premium slot ($20). Appointments made 24hrs before desired date are considered emergency appointments.",
+    "hairPreparation": "Hair MUST be freshly washed and blow-dried. Failure to do so will lead to being sent home and the appointment cancelled. Please ensure you turn up to appointment with no oils or products (grease free) as it will affect the outcome of your hair when it's done.",
+    "payment": "The remaining balance will be collected in cash. Please ensure you have the correct amount."
   }
 }

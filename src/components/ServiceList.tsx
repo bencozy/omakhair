@@ -62,7 +62,7 @@ export function ServiceList({
             key={service.id}
             className={`border rounded-lg transition-all duration-200 ${
               isSelected 
-                ? 'border-rose-500 bg-rose-50' 
+                ? 'border-gray-500 bg-gray-50' 
                 : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
           >
@@ -75,8 +75,8 @@ export function ServiceList({
                     onClick={() => onServiceToggle(service.id)}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 mt-1 ${
                       isSelected 
-                        ? 'border-rose-500 bg-rose-500' 
-                        : 'border-gray-300 hover:border-rose-400'
+                        ? 'border-gray-500 bg-gray-500' 
+                        : 'border-gray-300 hover:border-gray-400'
                     }`}
                   >
                     {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
@@ -86,7 +86,7 @@ export function ServiceList({
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
                       {service.popular && (
-                        <div className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <div className="bg-black text-white text-xs font-semibold px-3 py-1 rounded-md flex items-center gap-1">
                           <Star className="w-3 h-3" />
                           Popular
                         </div>
@@ -135,7 +135,7 @@ export function ServiceList({
                       <Clock className="w-4 h-4" />
                       {formatDuration(getServiceDuration(service))}
                     </div>
-                    <div className="flex items-center gap-1 text-lg font-bold text-rose-600">
+                    <div className="flex items-center gap-1 text-lg font-bold text-gray-600">
                       <DollarSign className="w-5 h-5" />
                       {formatCurrency(getServiceTotal(service))}
                     </div>
@@ -173,7 +173,7 @@ export function ServiceList({
                         key={addon.id}
                         className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                           isAddonSelected
-                            ? 'border-rose-300 bg-rose-100'
+                            ? 'border-gray-300 bg-gray-100'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
@@ -183,9 +183,9 @@ export function ServiceList({
                             disabled={!isSelected}
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                               isAddonSelected
-                                ? 'border-rose-500 bg-rose-500'
+                                ? 'border-gray-500 bg-gray-500'
                                 : isSelected
-                                ? 'border-gray-300 hover:border-rose-400'
+                                ? 'border-gray-300 hover:border-gray-400'
                                 : 'border-gray-200 opacity-50 cursor-not-allowed'
                             }`}
                           >
@@ -204,7 +204,7 @@ export function ServiceList({
                               +{formatDuration(addon.duration)}
                             </div>
                           )}
-                          <div className="font-semibold text-rose-600">
+                          <div className="font-semibold text-gray-600">
                             +{formatCurrency(addon.price)}
                           </div>
                         </div>

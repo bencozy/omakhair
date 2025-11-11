@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format, addMinutes, isBefore, isAfter, isSameDay, parseISO } from 'date-fns'
+import { format, addMinutes, isBefore, isAfter, isSameDay } from 'date-fns'
 import { Service, Booking, TimeSlot } from '@/types'
 import servicesData from '@/data/services.json'
 
@@ -100,10 +100,14 @@ export function generateTimeSlots(
   // Get settings
   const settings = servicesData.settings
   
-  // Filter bookings to only those on the selected date
-  const todaysBookings = existingBookings.filter(booking => 
-    isSameDay(booking.appointmentDate, date)
-  )
+  // Filter bookings to only those on the selected date AND not cancelled
+  // Block time slots for pending, confirmed, and completed bookings
+  // Compare dates by their date string (YYYY-MM-DD) to avoid timezone issues
+  const selectedDateStr = format(date, 'yyyy-MM-dd')
+  const todaysBookings = existingBookings.filter(booking => {
+    const bookingDateStr = format(booking.appointmentDate, 'yyyy-MM-dd')
+    return bookingDateStr === selectedDateStr && booking.status !== 'cancelled'
+  })
   
   // Calculate total duration for the services being booked (in minutes)
   const requestedDuration = calculateTotalDuration(selectedServiceIds, selectedAddons)
@@ -112,14 +116,23 @@ export function generateTimeSlots(
   if (process.env.NODE_ENV === 'development') {
     console.log('Time slot generation debug:', {
       selectedDate: format(date, 'yyyy-MM-dd'),
+      selectedDateStr,
       dayOfWeek,
       businessHours,
       totalExistingBookings: existingBookings.length,
+      allBookingDates: existingBookings.map(b => ({
+        id: b.id,
+        rawDate: b.appointmentDate.toISOString(),
+        formattedDate: format(b.appointmentDate, 'yyyy-MM-dd'),
+        time: `${b.startTime}-${b.endTime}`,
+        status: b.status
+      })),
       todaysBookingsCount: todaysBookings.length,
       todaysBookings: todaysBookings.map(b => ({
         id: b.id,
         date: format(b.appointmentDate, 'yyyy-MM-dd'),
-        time: `${b.startTime}-${b.endTime}`
+        time: `${b.startTime}-${b.endTime}`,
+        status: b.status
       })),
       requestedDuration,
       selectedServiceIds
@@ -143,8 +156,15 @@ export function generateTimeSlots(
       } else {
         // Check for conflicts with existing bookings on this day
         conflictingBooking = todaysBookings.find(booking => {
-          const bookingStart = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.startTime}`)
-          const bookingEnd = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.endTime}`)
+          // Parse times without timezone conversion
+          const [startHour, startMinute] = booking.startTime.split(':').map(Number)
+          const [endHour, endMinute] = booking.endTime.split(':').map(Number)
+          
+          const bookingStart = new Date(date)
+          bookingStart.setHours(startHour, startMinute, 0, 0)
+          
+          const bookingEnd = new Date(date)
+          bookingEnd.setHours(endHour, endMinute, 0, 0)
           
           // Check if our proposed service time would overlap with this booking
           // Overlap occurs if: our start < their end AND our end > their start
@@ -160,8 +180,15 @@ export function generateTimeSlots(
     } else {
       // If no services selected, only block if this exact slot is within an existing booking
       conflictingBooking = todaysBookings.find(booking => {
-        const bookingStart = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.startTime}`)
-        const bookingEnd = parseISO(`${format(date, 'yyyy-MM-dd')}T${booking.endTime}`)
+        // Parse times without timezone conversion
+        const [startHour, startMinute] = booking.startTime.split(':').map(Number)
+        const [endHour, endMinute] = booking.endTime.split(':').map(Number)
+        
+        const bookingStart = new Date(date)
+        bookingStart.setHours(startHour, startMinute, 0, 0)
+        
+        const bookingEnd = new Date(date)
+        bookingEnd.setHours(endHour, endMinute, 0, 0)
         
         // Check if this specific 30-minute slot falls within an existing booking
         return (

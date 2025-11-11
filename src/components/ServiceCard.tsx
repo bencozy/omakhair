@@ -14,27 +14,27 @@ export function ServiceCard({ service, onSelect, isSelected = false }: ServiceCa
   return (
     <div 
       className={`bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer relative ${
-        isSelected ? 'ring-2 ring-rose-500 transform scale-105' : 'hover:transform hover:scale-102'
+        isSelected ? 'ring-2 ring-black transform scale-105' : 'hover:transform hover:scale-102'
       }`}
       onClick={() => onSelect?.(service.id)}
     >
       {/* Badges */}
       <div className="absolute top-3 right-3 z-10 flex gap-2">
         {service.popular && (
-          <div className="bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+          <div className="bg-black text-white text-xs font-semibold px-3 py-1 rounded-md flex items-center gap-1">
             <Star className="w-3 h-3" />
             Popular
           </div>
         )}
         {service.premium && (
-          <div className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+          <div className="bg-gray-800 text-white text-xs font-semibold px-3 py-1 rounded-md flex items-center gap-1">
             <Crown className="w-3 h-3" />
             Premium
           </div>
         )}
       </div>
 
-      <div className="h-48 bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center relative">
+      <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center relative border-b border-gray-200">
         <div className="text-6xl">💇‍♀️</div>
       </div>
       
@@ -52,12 +52,12 @@ export function ServiceCard({ service, onSelect, isSelected = false }: ServiceCa
             <ul className="text-xs text-gray-600 space-y-1">
               {service.includes.slice(0, 3).map((item, index) => (
                 <li key={index} className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-rose-400 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-black rounded-full"></div>
                   {item}
                 </li>
               ))}
               {service.includes.length > 3 && (
-                <li className="text-rose-600 font-medium">+{service.includes.length - 3} more</li>
+                <li className="text-gray-700 font-medium">+{service.includes.length - 3} more</li>
               )}
             </ul>
           </div>
@@ -87,13 +87,13 @@ export function ServiceCard({ service, onSelect, isSelected = false }: ServiceCa
               <Clock className="w-4 h-4" />
               {formatDuration(service.duration)}
             </div>
-            <div className="flex items-center gap-1 text-lg font-bold text-rose-600">
+            <div className="flex items-center gap-1 text-lg font-bold text-black">
               <DollarSign className="w-5 h-5" />
               {formatCurrency(service.price)}
             </div>
           </div>
           {isSelected && (
-            <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
               <CheckCircle className="w-5 h-5 text-white" />
             </div>
           )}

@@ -76,11 +76,11 @@ export function SimpleQRCode({ className = '' }: SimpleQRCodeProps) {
     <div className={`text-center ${className}`}>
       <div className="inline-block">
         <div className="flex items-center justify-center gap-2 mb-3">
-          <QrCode className="w-5 h-5 text-rose-600" />
+          <QrCode className="w-5 h-5 text-gray-600" />
           <h3 className="text-lg font-semibold text-gray-900">Save Our Contact</h3>
         </div>
         
-        <div className="bg-white p-3 rounded-xl border-2 border-rose-100 shadow-sm inline-block">
+        <div className="bg-white p-3 rounded-xl border-2 border-gray-100 shadow-sm inline-block">
           {isLoading && (
             <div className="w-[200px] h-[200px] bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
               <div className="text-gray-400 text-xs">Generating QR Code...</div>

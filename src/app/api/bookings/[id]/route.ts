@@ -1,37 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar';
 
-export async function PUT(
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const updates = await request.json();
+    const token = request.headers.get('authorization');
     
-    // In a real application, you would:
-    // 1. Fetch the booking from database
-    // 2. Update the booking
-    // 3. Update the Google Calendar event if needed
-
-    // For now, we'll just handle the calendar update
-    if (updates.googleCalendarEventId && updates.booking) {
-      try {
-        await updateCalendarEvent(updates.googleCalendarEventId, updates.booking);
-      } catch (error) {
-        console.error('Failed to update calendar event:', error);
-      }
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = token;
+    }
+    
+    const response = await fetch(`${API_URL}/bookings/${id}`, { headers });
+    
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: 'Booking not found' },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Booking updated successfully' 
+    const booking = await response.json();
+    return NextResponse.json({ booking });
+  } catch (error) {
+    console.error('Failed to fetch booking:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch booking' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const token = request.headers.get('authorization');
+    
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = token;
+    }
+    
+    const response = await fetch(`${API_URL}/bookings/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(body),
     });
 
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: 'Failed to update booking' },
+        { status: response.status }
+      );
+    }
+
+    const booking = await response.json();
+    return NextResponse.json({ booking });
   } catch (error) {
-    console.error('Booking update error:', error);
+    console.error('Failed to update booking:', error);
     return NextResponse.json(
-      { error: 'Failed to update booking' }, 
+      { error: 'Failed to update booking' },
       { status: 500 }
     );
   }
@@ -43,28 +82,30 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { googleCalendarEventId } = await request.json();
+    const token = request.headers.get('authorization');
     
-    // Delete from Google Calendar
-    if (googleCalendarEventId) {
-      try {
-        await deleteCalendarEvent(googleCalendarEventId);
-      } catch (error) {
-        console.error('Failed to delete calendar event:', error);
-      }
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = token;
     }
-
-    // In a real application, you would also delete from database
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Booking deleted successfully' 
+    
+    const response = await fetch(`${API_URL}/bookings/${id}`, {
+      method: 'DELETE',
+      headers,
     });
 
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: 'Failed to delete booking' },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Booking deletion error:', error);
+    console.error('Failed to delete booking:', error);
     return NextResponse.json(
-      { error: 'Failed to delete booking' }, 
+      { error: 'Failed to delete booking' },
       { status: 500 }
     );
   }
