@@ -3,7 +3,7 @@ import { Booking } from '@/types';
 import { addMinutes } from 'date-fns';
 
 // Google Calendar configuration
-const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
+const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
 const GOOGLE_CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
