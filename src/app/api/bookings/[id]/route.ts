@@ -103,7 +103,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to delete booking:', error);
+    console.error('Failed to delete booking--showing error:', error);
     return NextResponse.json(
       { error: 'Failed to delete booking' },
       { status: 500 }
