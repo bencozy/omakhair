@@ -821,9 +821,9 @@ function BookPageContent() {
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
         <div className="text-green-600 text-2xl">✓</div>
       </div>
-      <h2 className="text-3xl font-bold text-gray-900">Booking Submitted!</h2>
+      <h2 className="text-3xl font-bold text-gray-900">Booking Confirmed!</h2>
       <p className="text-xl text-gray-700">
-        Thank you, {formData.firstName}! Your appointment request has been successfully submitted.
+        Thank you, {formData.firstName}! Your appointment has been successfully confirmed.
       </p>
       
       <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-left max-w-md mx-auto">
@@ -849,12 +849,12 @@ function BookPageContent() {
       </div>
 
       <div className="space-y-4">
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg max-w-2xl mx-auto">
+        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg max-w-2xl mx-auto">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-900">
-              <p className="font-semibold mb-1">Pending Confirmation</p>
-              <p>Your booking request is pending vendor confirmation. You will receive a confirmation email at <span className="font-semibold">{formData.email}</span> once your appointment has been confirmed.</p>
+            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-green-900">
+              <p className="font-semibold mb-1">Confirmed</p>
+              <p>Your appointment is confirmed! A confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with all the details.</p>
             </div>
           </div>
         </div>
