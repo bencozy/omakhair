@@ -50,6 +50,10 @@ export default function AdminPage() {
   const [dateToBlock, setDateToBlock] = useState<Date | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundReason, setRefundReason] = useState<string>('');
+  const [calculatedRefund, setCalculatedRefund] = useState<{ amount: number; type: string; message: string } | null>(null);
+  const [processingRefund, setProcessingRefund] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const bookingDetailsRef = useRef<HTMLDivElement>(null);
 
@@ -357,6 +361,99 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Failed to delete booking:', error);
+    }
+  };
+
+  const calculateRefundAmount = (booking: Booking) => {
+    if (booking.paymentStatus !== 'paid') {
+      return {
+        amount: 0,
+        type: 'none',
+        message: 'No payment to refund - booking was not paid for.'
+      };
+    }
+
+    const now = new Date();
+    const appointmentDate = new Date(booking.appointmentDate);
+    const hoursUntilAppointment = (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    if (hoursUntilAppointment >= 48) {
+      return {
+        amount: booking.paidAmount || 30,
+        type: 'full',
+        message: 'Full refund (cancelled 48+ hours before appointment)'
+      };
+    } else if (hoursUntilAppointment >= 24) {
+      const refundAmount = (booking.paidAmount || 30) * 0.5;
+      return {
+        amount: refundAmount,
+        type: 'partial_48hrs',
+        message: 'Partial refund - 50% (cancelled 24-48 hours before appointment)'
+      };
+    } else {
+      return {
+        amount: 0,
+        type: 'none',
+        message: 'No refund (cancelled less than 24 hours before appointment)'
+      };
+    }
+  };
+
+  const handleRefundClick = (booking: Booking) => {
+    setSelectedBooking(booking);
+    const refundInfo = calculateRefundAmount(booking);
+    setCalculatedRefund(refundInfo);
+    setRefundReason('');
+    setShowRefundModal(true);
+  };
+
+  const processRefund = async () => {
+    if (!selectedBooking || !calculatedRefund) return;
+
+    setProcessingRefund(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'refund',
+          bookingId: selectedBooking.id,
+          amount: calculatedRefund.amount,
+          reason: refundReason || 'Customer cancellation',
+          refundType: calculatedRefund.type,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to process refund');
+      }
+
+      await fetchBookings();
+      await updateBookingStatus(selectedBooking.id, 'cancelled');
+      
+      setShowRefundModal(false);
+      setSelectedBooking(null);
+      setRefundReason('');
+      setCalculatedRefund(null);
+      
+      setNotification({
+        message: `Refund processed successfully. ${formatCurrency(calculatedRefund.amount)} will be returned to the customer.`,
+        type: 'success'
+      });
+    } catch (error: any) {
+      console.error('Refund error:', error);
+      setNotification({
+        message: error.message || 'Failed to process refund. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      setProcessingRefund(false);
     }
   };
 
@@ -879,6 +976,14 @@ export default function AdminPage() {
                     >
                       Apply Discount
                     </button>
+                    {selectedBooking.paymentStatus === 'paid' && selectedBooking.status !== 'cancelled' && (
+                      <button
+                        onClick={() => handleRefundClick(selectedBooking)}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+                      >
+                        Process Refund
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setBookingToDelete(selectedBooking.id);
@@ -1254,6 +1359,104 @@ export default function AdminPage() {
                 }`}
               >
                 {blockedDates.some(d => isSameDay(d, dateToBlock)) ? 'Unblock Date' : 'Block Date'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Modal */}
+      {showRefundModal && selectedBooking && calculatedRefund && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-red-50 border-b border-red-200 px-6 py-4">
+              <h3 className="text-lg font-semibold text-red-900">Process Refund & Cancellation</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                <p className="text-sm text-yellow-900 font-medium mb-2">⚠️ This will cancel the booking and process a refund</p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Customer</span>
+                  <span className="font-medium text-gray-900">
+                    {selectedBooking.customer.firstName} {selectedBooking.customer.lastName}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Appointment Date</span>
+                  <span className="font-medium text-gray-900">
+                    {format(selectedBooking.appointmentDate, 'MMM d, yyyy')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Paid Amount</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatCurrency(selectedBooking.paidAmount || 30)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-900">Refund Amount</span>
+                    <span className="text-lg font-bold text-blue-900">
+                      {formatCurrency(calculatedRefund.amount)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-800">{calculatedRefund.message}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Refund Reason (Optional)
+                </label>
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                  placeholder="e.g., Customer requested cancellation"
+                />
+              </div>
+
+              {calculatedRefund.amount === 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                  <p className="text-sm text-gray-800">
+                    ⚠️ This booking will be cancelled but no refund will be issued according to the cancellation policy.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowRefundModal(false);
+                  setSelectedBooking(null);
+                  setRefundReason('');
+                  setCalculatedRefund(null);
+                }}
+                disabled={processingRefund}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={processRefund}
+                disabled={processingRefund}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {processingRefund ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>Confirm Refund & Cancel</>
+                )}
               </button>
             </div>
           </div>

@@ -3,10 +3,13 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard } from 'lucide-react';
 import Calendar from 'react-calendar';
 import { format, addDays, startOfToday } from 'date-fns';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import { ServiceList } from '@/components/ServiceList';
+import { PaymentForm } from '@/components/PaymentForm';
 import { BookingFormData, TimeSlot, Booking } from '@/types';
 import { 
   getServices, 
@@ -18,6 +21,8 @@ import {
   validateEmail,
   validatePhone
 } from '@/lib/utils';
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 function BookPageContent() {
   const router = useRouter();
@@ -41,6 +46,9 @@ function BookPageContent() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [bookingError, setBookingError] = useState<string>('');
+  const [pendingBookingId, setPendingBookingId] = useState<string>('');
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [paymentIntentId, setPaymentIntentId] = useState<string>('');
 
   const services = getServices();
   const selectedServices = services.filter(service => formData.selectedServices.includes(service.id));
@@ -95,8 +103,8 @@ function BookPageContent() {
   useEffect(() => {
     const params = new URLSearchParams();
     
-    // Don't add URL params on step 1 or step 4 (success page)
-    if (step > 1 && step < 4) {
+    // Don't add URL params on step 1 or step 5 (success page)
+    if (step > 1 && step < 5) {
       params.set('step', step.toString());
       
       if (formData.selectedServices.length > 0) {
@@ -313,16 +321,15 @@ function BookPageContent() {
     if (!validateStep(3)) return;
 
     setLoading(true);
+    setBookingError('');
+    
     try {
-      // Format date properly to avoid timezone issues
-      // Create a date string in local timezone (YYYY-MM-DD)
       const year = formData.appointmentDate.getFullYear();
       const month = String(formData.appointmentDate.getMonth() + 1).padStart(2, '0');
       const day = String(formData.appointmentDate.getDate()).padStart(2, '0');
       const localDateString = `${year}-${month}-${day}T00:00:00`;
 
-      // Call API to create booking
-      const response = await fetch('/api/bookings', {
+      const bookingResponse = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -333,23 +340,79 @@ function BookPageContent() {
         }),
       });
 
-      const result = await response.json();
+      const bookingResult = await bookingResponse.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create booking');
+      if (!bookingResponse.ok) {
+        throw new Error(bookingResult.error || 'Failed to create booking');
       }
 
-      // Booking is now saved in the database via the API
-      // Clear saved selections from localStorage
-      localStorage.removeItem('bookingSelections');
+      const bookingId = bookingResult.booking._id || bookingResult.booking.id;
+      setPendingBookingId(bookingId);
+
+      const paymentResponse = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create-intent',
+          bookingId: bookingId,
+          amount: 30,
+          currency: 'usd',
+        }),
+      });
+
+      const paymentResult = await paymentResponse.json();
+
+      if (!paymentResponse.ok) {
+        throw new Error(paymentResult.error || 'Failed to create payment intent');
+      }
+
+      setClientSecret(paymentResult.clientSecret);
+      setPaymentIntentId(paymentResult.paymentIntentId);
       setBookingError('');
       setStep(4);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking error:', error);
-      setBookingError('Failed to create booking. Please try again.');
+      setBookingError(error.message || 'Failed to create booking. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePaymentSuccess = async () => {
+    setLoading(true);
+    try {
+      const confirmResponse = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'confirm',
+          paymentIntentId: paymentIntentId,
+          bookingId: pendingBookingId,
+        }),
+      });
+
+      const confirmResult = await confirmResponse.json();
+
+      if (!confirmResponse.ok) {
+        throw new Error(confirmResult.error || 'Failed to confirm payment');
+      }
+
+      localStorage.removeItem('bookingSelections');
+      setStep(5);
+    } catch (error: any) {
+      console.error('Payment confirmation error:', error);
+      setBookingError(error.message || 'Failed to confirm payment. Please contact support.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePaymentError = (error: string) => {
+    setBookingError(error);
   };
 
   const renderStep1 = () => (
@@ -808,22 +871,144 @@ function BookPageContent() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-400 transition-colors"
+          className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
         >
-          {loading ? 'Booking...' : 'Confirm Booking'}
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              Creating Booking...
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-5 h-5" />
+              Continue to Payment
+            </>
+          )}
         </button>
       </div>
     </div>
   );
 
   const renderStep4 = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-3xl font-serif font-bold text-black mb-2 tracking-tight">Complete Payment</h2>
+        <p className="text-gray-600">Secure your booking with a $30 payment</p>
+      </div>
+
+      {bookingError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-red-800 font-medium">Payment Error</p>
+            <p className="text-red-700 text-sm mt-1">{bookingError}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Summary */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Summary</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-700">Name:</span>
+            <span className="font-medium text-gray-900">{formData.firstName} {formData.lastName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700">Date:</span>
+            <span className="font-medium text-gray-900">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700">Time:</span>
+            <span className="font-medium text-gray-900">{formData.selectedTime}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700">Services:</span>
+            <span className="font-medium text-gray-900">{selectedServices.map(s => s.name).join(', ')}</span>
+          </div>
+          <div className="border-t border-gray-300 pt-2 mt-2">
+            <div className="flex justify-between text-base">
+              <span className="text-gray-700">Total Service Price:</span>
+              <span className="font-semibold text-gray-900">{formatCurrency(totalPrice)}</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold text-black mt-2">
+              <span>Booking Payment:</span>
+              <span>$30.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Policy Notice */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
+          Payment & Cancellation Policy
+        </h4>
+        <div className="space-y-2 text-sm text-blue-900">
+          <p>• $30 booking payment required to confirm your appointment</p>
+          <p>• Cancel 48+ hours before: Full refund</p>
+          <p>• Cancel 24-48 hours before: 50% refund ($15)</p>
+          <p>• Cancel less than 24 hours: No refund</p>
+          <p>• Remaining balance of {formatCurrency(totalPrice - 30)} due at appointment</p>
+        </div>
+      </div>
+
+      {/* Stripe Payment Form */}
+      {clientSecret && (
+        <Elements 
+          stripe={stripePromise} 
+          options={{
+            clientSecret,
+            appearance: {
+              theme: 'stripe',
+              variables: {
+                colorPrimary: '#000000',
+                colorBackground: '#ffffff',
+                colorText: '#000000',
+                colorDanger: '#dc2626',
+                fontFamily: 'system-ui, sans-serif',
+                borderRadius: '8px',
+              },
+            },
+          }}
+        >
+          <PaymentForm 
+            bookingId={pendingBookingId}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+          />
+        </Elements>
+      )}
+
+      {!clientSecret && (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            <p className="text-gray-600 text-sm">Preparing payment...</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-center">
+        <button
+          onClick={() => setStep(3)}
+          className="text-gray-600 hover:text-black transition-colors text-sm"
+        >
+          ← Back to Details
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderStep5 = () => (
     <div className="text-center space-y-6">
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
         <div className="text-green-600 text-2xl">✓</div>
       </div>
-      <h2 className="text-3xl font-bold text-gray-900">Booking Confirmed!</h2>
+      <h2 className="text-3xl font-bold text-gray-900">Payment Successful!</h2>
       <p className="text-xl text-gray-700">
-        Thank you, {formData.firstName}! Your appointment has been successfully confirmed.
+        Thank you, {formData.firstName}! Your booking payment has been confirmed.
       </p>
       
       <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-left max-w-md mx-auto">
@@ -899,11 +1084,11 @@ function BookPageContent() {
       </header>
 
       {/* Progress Bar */}
-      {step < 4 && (
+      {step < 5 && (
         <div className="bg-white border-b">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-center sm:justify-between">
-              {[1, 2, 3].map((stepNumber) => (
+              {[1, 2, 3, 4].map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
@@ -919,10 +1104,10 @@ function BookPageContent() {
                       step >= stepNumber ? 'text-black' : 'text-gray-600'
                     }`}
                   >
-                    {stepNumber === 1 ? 'Services' : stepNumber === 2 ? 'Date & Time' : 'Details'}
+                    {stepNumber === 1 ? 'Services' : stepNumber === 2 ? 'Date & Time' : stepNumber === 3 ? 'Details' : 'Payment'}
                   </span>
-                  {stepNumber < 3 && (
-                    <div className="flex-1 h-1 bg-gray-200 mx-2 sm:mx-4 rounded min-w-[20px] sm:min-w-[40px]">
+                  {stepNumber < 4 && (
+                    <div className="flex-1 h-1 bg-gray-200 mx-2 sm:mx-4 rounded min-w-[15px] sm:min-w-[30px]">
                       <div
                         className={`h-full rounded transition-all duration-300 ${
                           step > stepNumber ? 'bg-black w-full' : 'bg-gray-200 w-0'
@@ -943,6 +1128,7 @@ function BookPageContent() {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
+        {step === 5 && renderStep5()}
       </main>
     </div>
   );

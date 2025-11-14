@@ -45,6 +45,27 @@ export interface Booking {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes?: string;
   googleCalendarEventId?: string;
+  paymentId?: string;
+  paymentStatus?: 'unpaid' | 'paid' | 'refunded' | 'partially_refunded';
+  paidAmount?: number;
+  refundAmount?: number;
+  refundType?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Payment {
+  id: string;
+  bookingId: string;
+  stripePaymentIntentId: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'succeeded' | 'failed' | 'canceled' | 'refunded' | 'partially_refunded';
+  stripeRefundId?: string;
+  refundAmount?: number;
+  refundReason?: string;
+  refundedAt?: Date;
+  metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }

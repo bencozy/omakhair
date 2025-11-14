@@ -21,6 +21,7 @@ export function ServiceList({
   onAddonToggle 
 }: ServiceListProps) {
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
+  const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (serviceId: string) => {
     const newExpanded = new Set(expandedServices);
@@ -30,6 +31,16 @@ export function ServiceList({
       newExpanded.add(serviceId);
     }
     setExpandedServices(newExpanded);
+  };
+
+  const toggleDetails = (serviceId: string) => {
+    const newExpanded = new Set(expandedDetails);
+    if (newExpanded.has(serviceId)) {
+      newExpanded.delete(serviceId);
+    } else {
+      newExpanded.add(serviceId);
+    }
+    setExpandedDetails(newExpanded);
   };
 
   const getServiceTotal = (service: Service) => {
@@ -56,6 +67,9 @@ export function ServiceList({
         const isSelected = selectedServices.includes(service.id);
         const isExpanded = expandedServices.has(service.id);
         const hasAddons = service.addons && service.addons.length > 0;
+
+        const isDetailsExpanded = expandedDetails.has(service.id);
+        const hasDetails = (service.includes && service.includes.length > 0) || (service.requirements && service.requirements.length > 0);
 
         return (
           <div 
@@ -98,31 +112,56 @@ export function ServiceList({
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-600 text-sm mb-3">{service.description}</p>
+                    <p className="text-gray-600 text-sm mb-2">{service.description}</p>
                     
-                    {/* What's Included */}
-                    {service.includes && service.includes.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          What's Included:
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {service.includes.join(' • ')}
-                        </p>
-                      </div>
+                    {/* View More Button */}
+                    {hasDetails && (
+                      <button
+                        onClick={() => toggleDetails(service.id)}
+                        className="text-xs text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1 mb-2"
+                      >
+                        {isDetailsExpanded ? (
+                          <>
+                            <ChevronDown className="w-3 h-3" />
+                            View Less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronRight className="w-3 h-3" />
+                            View More
+                          </>
+                        )}
+                      </button>
                     )}
 
-                    {/* Requirements */}
-                    {service.requirements && service.requirements.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs font-medium text-amber-700 mb-1 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          Please Note:
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {service.requirements.join(' • ')}
-                        </p>
+                    {/* Collapsible Details Section */}
+                    {hasDetails && isDetailsExpanded && (
+                      <div className="space-y-3 mb-3">
+                        {/* What's Included */}
+                        {service.includes && service.includes.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              What's Included:
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {service.includes.join(' • ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Requirements */}
+                        {service.requirements && service.requirements.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-amber-700 mb-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Please Note:
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {service.requirements.join(' • ')}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -144,12 +183,14 @@ export function ServiceList({
                   {hasAddons && (
                     <button
                       onClick={() => toggleExpanded(service.id)}
-                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
                     >
+                      <Plus className="w-4 h-4" />
+                      {isExpanded ? 'Hide Add-ons' : 'Add-ons Available'}
                       {isExpanded ? (
-                        <ChevronDown className="w-5 h-5 text-gray-500" />
+                        <ChevronDown className="w-4 h-4" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-gray-500" />
+                        <ChevronRight className="w-4 h-4" />
                       )}
                     </button>
                   )}
@@ -160,10 +201,11 @@ export function ServiceList({
             {/* Add-ons Section */}
             {hasAddons && isExpanded && (
               <div className="border-t border-gray-200 bg-gray-50 p-4">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
                   <Plus className="w-4 h-4" />
-                  Add-ons & Upgrades
+                  Select Add-ons
                 </h4>
+                <p className="text-xs text-gray-600 mb-3">Choose optional add-ons to enhance your service</p>
                 <div className="space-y-3">
                   {service.addons?.map((addon) => {
                     const isAddonSelected = selectedAddons[service.id]?.includes(addon.id) || false;
