@@ -17,13 +17,18 @@ import {
   Ban,
   CheckCircle,
   X,
-  LogOut
+  LogOut,
+  LayoutDashboard,
+  TrendingUp,
+  Menu,
+  Home
 } from 'lucide-react';
 import { Booking, AdminStats, Service } from '@/types';
 import { formatCurrency, formatDuration } from '@/lib/utils';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { GoogleAdsSection } from '@/components/GoogleAdsSection';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -56,6 +61,8 @@ export default function AdminPage() {
   const [processingRefund, setProcessingRefund] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const bookingDetailsRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'bookings' | 'google-ads'>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -543,7 +550,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Notification Banner */}
       {notification && (
         <div className={`fixed top-4 right-4 z-[60] max-w-md ${
@@ -576,68 +583,189 @@ export default function AdminPage() {
         </div>
       )}
       
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 gap-4">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center text-black hover:text-gray-900 mr-4 sm:mr-8">
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                <span className="hidden sm:inline">Back to Home</span>
-                <span className="sm:hidden">Back</span>
-              </Link>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Logout Button */}
+      {/* Left Sidebar - Collapsible */}
+      <aside className={`
+        fixed md:relative top-0 left-0 z-50 h-screen bg-white border-r border-gray-200 
+        transition-all duration-300 
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${sidebarOpen ? 'w-64' : 'w-0 md:w-20'}
+        flex-shrink-0 overflow-hidden
+      `}>
+        <div className="flex flex-col h-full">
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            {sidebarOpen ? (
+              <>
+                <h2 className="text-xl font-bold text-gray-900">Admin</h2>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors md:hidden"
+                  aria-label="Close sidebar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden md:block"
+                  aria-label="Collapse sidebar"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              </>
+            ) : (
               <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                title="Logout"
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors mx-auto"
+                aria-label="Expand sidebar"
               >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <Menu className="w-5 h-5" />
               </button>
-              
-              {/* View Toggle */}
-              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-                    viewMode === 'list'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-gray-600 hover:text-black'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                  <span className="hidden sm:inline">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('calendar')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-                    viewMode === 'calendar'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-gray-600 hover:text-black'
-                  }`}
-                >
-                  <CalendarDays className="w-4 h-4" />
-                  <span className="hidden sm:inline">Calendar</span>
-                </button>
-              </div>
-              
-              <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors">
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Export</span>
-                <span className="sm:hidden">Export</span>
-              </button>
-            </div>
+            )}
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="flex-1 p-4 space-y-2">
+            <button
+              onClick={() => {
+                setActiveSection('dashboard');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeSection === 'dashboard'
+                  ? 'bg-black text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="font-medium">Dashboard</span>}
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveSection('bookings');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeSection === 'bookings'
+                  ? 'bg-black text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <CalendarIcon className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="font-medium">Bookings</span>}
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveSection('google-ads');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeSection === 'google-ads'
+                  ? 'bg-black text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <TrendingUp className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="font-medium">Google Ads</span>}
+            </button>
+          </nav>
+
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t border-gray-200 space-y-2">
+            <Link
+              href="/"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-100"
+            >
+              <Home className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="font-medium">Home</span>}
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-100"
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="font-medium">Logout</span>}
+            </button>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Stats Cards - Always show with max-width */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header */}
+        <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                {/* Mobile menu button */}
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Open menu"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {activeSection === 'dashboard' && 'Dashboard'}
+                  {activeSection === 'bookings' && 'Bookings'}
+                  {activeSection === 'google-ads' && 'Google Ads'}
+                </h1>
+              </div>
+              {activeSection === 'bookings' && (
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {/* View Toggle */}
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`flex items-center gap-1 px-2 sm:px-3 py-2 rounded-md transition-colors ${
+                        viewMode === 'list'
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                      aria-label="List view"
+                    >
+                      <List className="w-4 h-4" />
+                      <span className="hidden sm:inline text-sm">List</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('calendar')}
+                      className={`flex items-center gap-1 px-2 sm:px-3 py-2 rounded-md transition-colors ${
+                        viewMode === 'calendar'
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                      aria-label="Calendar view"
+                    >
+                      <CalendarDays className="w-4 h-4" />
+                      <span className="hidden sm:inline text-sm">Calendar</span>
+                    </button>
+                  </div>
+                  
+                  <button className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors text-sm">
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Export</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Section */}
+        {activeSection === 'dashboard' && (
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-xl flex-shrink-0">
@@ -687,34 +815,39 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Popular Services - Only show in List View */}
-        {viewMode === 'list' && stats.popularServices.length > 0 && (
-          <div className="bg-white rounded-lg shadow mb-8 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Popular Services</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {stats.popularServices.map(({ service, count }) => (
-                <div key={service.id} className="text-center">
-                  <div className="text-2xl font-bold text-black">{count}</div>
-                  <div className="text-sm text-gray-700">{service.name}</div>
+              {/* Popular Services */}
+              {stats.popularServices.length > 0 && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Popular Services</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {stats.popularServices.map(({ service, count }) => (
+                      <div key={service.id} className="text-center">
+                        <div className="text-2xl font-bold text-black">{count}</div>
+                        <div className="text-sm text-gray-700">{service.name}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         )}
-      </div>
 
-      {/* Calendar View - Professional FullCalendar */}
-      {viewMode === 'calendar' && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-          <div className="space-y-6">
+        {/* Bookings Section */}
+        {activeSection === 'bookings' && (
+          <div className="flex-1 overflow-y-auto">
+            {/* Calendar View - Professional FullCalendar */}
+            {viewMode === 'calendar' && (
+              <div className="px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+          <div className="space-y-4 sm:space-y-6">
             {/* Calendar Header */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <div className="flex flex-col gap-4">
                 <div>
-                  <h2 className="text-2xl font-serif font-bold text-gray-900 tracking-tight">Booking Calendar</h2>
-                  <p className="text-sm text-gray-600 mt-1">Click on a booking to view details • Click empty dates to block/unblock</p>
+                  <h2 className="text-xl sm:text-2xl font-serif font-bold text-gray-900 tracking-tight">Booking Calendar</h2>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">Click on a booking to view details • Click empty dates to block/unblock</p>
                 </div>
-                <div className="flex items-center gap-4 text-xs">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs">
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
                     <span className="text-gray-600">Blocked</span>
@@ -736,15 +869,15 @@ export default function AdminPage() {
             </div>
 
             {/* FullCalendar */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 sm:p-4 lg:p-6 overflow-x-auto">
               <FullCalendar
                 key={bookings.length}
                 plugins={[dayGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
                 headerToolbar={{
-                  left: 'prev,next today',
+                  left: 'prev,next',
                   center: 'title',
-                  right: 'dayGridMonth,dayGridWeek'
+                  right: 'today'
                 }}
                 timeZone="local"
                 height="auto"
@@ -996,28 +1129,28 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+            )}
 
-      {/* Bookings Table - List View with max-width */}
-      {viewMode === 'list' && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+            {/* Bookings Table - List View */}
+            {viewMode === 'list' && (
+              <div className="px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm mb-6 p-4 sm:p-6 border border-gray-100">
-          <div className="flex flex-col gap-4">
+        <div className="bg-white rounded-xl shadow-sm mb-4 sm:mb-6 p-3 sm:p-4 lg:p-6 border border-gray-100">
+          <div className="flex flex-col gap-3 sm:gap-4">
             <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
               <input
                 type="text"
                 placeholder="Search customers, services..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 placeholder-gray-500 bg-white text-gray-900"
+                className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 placeholder-gray-500 bg-white text-gray-900"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -1521,6 +1654,18 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+          </div>
+        )}
+
+        {/* Google Ads Section */}
+        {activeSection === 'google-ads' && (
+          <div className="flex-1 overflow-y-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+            <div className="max-w-7xl mx-auto">
+              <GoogleAdsSection />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

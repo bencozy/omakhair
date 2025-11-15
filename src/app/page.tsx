@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { Calendar, Clock, Star, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { ServiceCard } from "@/components/ServiceCard";
@@ -19,14 +20,23 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-serif font-bold text-black tracking-tight">LaidbyOma</h1>
+              <Link href="/">
+                <Image 
+                  src="/laidbyoma.png" 
+                  alt="LaidbyOma" 
+                  width={120} 
+                  height={40}
+                  className="h-10 w-auto"
+                  priority
+                />
+              </Link>
             </div>
             <nav className="hidden md:flex space-x-8">
+              <Link href="/services" className="text-gray-700 hover:text-black transition-colors">
+                Services
+              </Link>
               <Link href="/instructions" className="text-gray-700 hover:text-black transition-colors">
                 Instructions
-              </Link>
-              <Link href="#services" className="text-gray-700 hover:text-black transition-colors">
-                Services
               </Link>
               <Link href="#about" className="text-gray-700 hover:text-black transition-colors">
                 About
@@ -67,18 +77,18 @@ export default function Home() {
             <div className="md:hidden border-t border-gray-200 bg-white">
               <div className="px-4 py-2 space-y-1">
                 <Link
+                  href="/services"
+                  className="block px-3 py-2 text-gray-700 hover:text-black hover:bg-gray-50 rounded-md transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Services
+                </Link>
+                <Link
                   href="/instructions"
                   className="block px-3 py-2 text-gray-700 hover:text-black hover:bg-gray-50 rounded-md transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Instructions
-                </Link>
-                <Link
-                  href="#services"
-                  className="block px-3 py-2 text-gray-700 hover:text-black hover:bg-gray-50 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Services
                 </Link>
                 <Link
                   href="#about"

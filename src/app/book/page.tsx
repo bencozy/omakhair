@@ -402,7 +402,18 @@ function BookPageContent() {
       }
 
       localStorage.removeItem('bookingSelections');
-      setStep(5);
+      
+      // Redirect to success page with booking details
+      const params = new URLSearchParams({
+        firstName: formData.firstName,
+        date: format(formData.appointmentDate, 'MMMM d, yyyy'),
+        time: formData.selectedTime,
+        services: `${selectedServices.length} service(s)`,
+        total: formatCurrency(totalPrice),
+        email: formData.email,
+      });
+      
+      router.push(`/book/success?${params.toString()}`);
     } catch (error: any) {
       console.error('Payment confirmation error:', error);
       setBookingError(error.message || 'Failed to confirm payment. Please contact support.');
@@ -1001,68 +1012,6 @@ function BookPageContent() {
     </div>
   );
 
-  const renderStep5 = () => (
-    <div className="text-center space-y-6">
-      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-        <div className="text-green-600 text-2xl">✓</div>
-      </div>
-      <h2 className="text-3xl font-bold text-gray-900">Payment Successful!</h2>
-      <p className="text-xl text-gray-700">
-        Thank you, {formData.firstName}! Your booking payment has been confirmed.
-      </p>
-      
-      <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-left max-w-md mx-auto">
-        <h3 className="font-semibold text-gray-900 mb-3">Appointment Details:</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-700">Date:</span>
-            <span className="font-medium text-gray-900">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">Time:</span>
-            <span className="font-medium text-gray-900">{formData.selectedTime}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">Services:</span>
-            <span className="font-medium text-gray-900">{selectedServices.length} service(s)</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">Total:</span>
-            <span className="font-medium text-gray-900">{formatCurrency(totalPrice)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg max-w-2xl mx-auto">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-green-900">
-              <p className="font-semibold mb-1">Confirmed</p>
-              <p>Your appointment is confirmed! A confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with all the details.</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/"
-            className="bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors text-center"
-          >
-            Back to Home
-          </Link>
-          <button
-            onClick={() => {
-              localStorage.removeItem('bookingSelections');
-              router.push('/book');
-            }}
-            className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-          >
-            Book Another
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -1128,7 +1077,6 @@ function BookPageContent() {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
-        {step === 5 && renderStep5()}
       </main>
     </div>
   );
