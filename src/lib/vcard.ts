@@ -133,7 +133,7 @@ export const OMAKHAIR_CONTACT: ContactInfo = {
   name: 'Oma Khair',
   organization: 'Oma Khair Hair & Beauty',
   phone: '(555) 123-4567',
-  email: 'hello@omakhair.com',
+  email: 'laidbyoma@gmail.com',
   website: 'https://omakhair.com',
   address: {
     street: '123 Beauty Ave',

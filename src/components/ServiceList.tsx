@@ -74,60 +74,60 @@ export function ServiceList({
         return (
           <div 
             key={service.id}
-            className={`border rounded-lg transition-all duration-200 ${
+            className={`rounded-xl transition-all duration-300 ${
               isSelected 
-                ? 'border-gray-500 bg-gray-50' 
-                : 'border-gray-200 bg-white hover:border-gray-300'
+                ? 'bg-gradient-to-br from-orange-500/20 to-orange-600/10 border-2 border-orange-500 shadow-lg shadow-orange-500/20' 
+                : 'bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 hover:border-gray-600 hover:shadow-lg'
             }`}
           >
             {/* Main Service Row */}
-            <div className="p-4">
+            <div className="p-5">
               <div className="space-y-4">
                 {/* Service Header with Selection */}
                 <div className="flex items-start gap-4">
                   <button
                     onClick={() => onServiceToggle(service.id)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 mt-1 ${
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 mt-1 ${
                       isSelected 
-                        ? 'border-gray-500 bg-gray-500' 
-                        : 'border-gray-300 hover:border-gray-400'
+                        ? 'border-orange-500 bg-orange-500 shadow-lg shadow-orange-500/30' 
+                        : 'border-gray-600 hover:border-orange-500 hover:bg-gray-800'
                     }`}
                   >
-                    {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
+                    {isSelected && <CheckCircle className="w-5 h-5 text-black" strokeWidth={3} />}
                   </button>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
+                      <h3 className="text-lg font-bold text-white">{service.name}</h3>
                       {service.popular && (
-                        <div className="bg-black text-white text-xs font-semibold px-3 py-1 rounded-md flex items-center gap-1">
-                          <Star className="w-3 h-3" />
+                        <div className="bg-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
+                          <Star className="w-3 h-3 fill-black" />
                           Popular
                         </div>
                       )}
                       {service.premium && (
-                        <div className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
                           <Crown className="w-3 h-3" />
                           Premium
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-600 text-sm mb-2">{service.description}</p>
+                    <p className="text-gray-300 text-sm mb-3 leading-relaxed">{service.description}</p>
                     
                     {/* View More Button */}
                     {hasDetails && (
                       <button
                         onClick={() => toggleDetails(service.id)}
-                        className="text-xs text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1 mb-2"
+                        className="text-xs text-orange-500 hover:text-orange-400 font-semibold flex items-center gap-1 mb-2 transition-colors"
                       >
                         {isDetailsExpanded ? (
                           <>
-                            <ChevronDown className="w-3 h-3" />
+                            <ChevronDown className="w-3.5 h-3.5" />
                             View Less
                           </>
                         ) : (
                           <>
-                            <ChevronRight className="w-3 h-3" />
+                            <ChevronRight className="w-3.5 h-3.5" />
                             View More
                           </>
                         )}
@@ -136,15 +136,15 @@ export function ServiceList({
 
                     {/* Collapsible Details Section */}
                     {hasDetails && isDetailsExpanded && (
-                      <div className="space-y-3 mb-3">
+                      <div className="space-y-3 mb-3 p-3 bg-black/30 rounded-lg border border-gray-700">
                         {/* What's Included */}
                         {service.includes && service.includes.length > 0 && (
                           <div>
-                            <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" />
+                            <p className="text-xs font-semibold text-green-400 mb-1 flex items-center gap-1">
+                              <CheckCircle className="w-3.5 h-3.5" />
                               What's Included:
                             </p>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-gray-400 leading-relaxed">
                               {service.includes.join(' • ')}
                             </p>
                           </div>
@@ -153,11 +153,11 @@ export function ServiceList({
                         {/* Requirements */}
                         {service.requirements && service.requirements.length > 0 && (
                           <div>
-                            <p className="text-xs font-medium text-amber-700 mb-1 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3" />
+                            <p className="text-xs font-semibold text-amber-400 mb-1 flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5" />
                               Please Note:
                             </p>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-gray-400 leading-relaxed">
                               {service.requirements.join(' • ')}
                             </p>
                           </div>
@@ -168,25 +168,25 @@ export function ServiceList({
                 </div>
 
                 {/* Pricing and Actions Row */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-3 border-t border-gray-700">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-1.5 text-sm text-gray-400">
                       <Clock className="w-4 h-4" />
-                      {formatDuration(getServiceDuration(service))}
+                      <span className="font-medium">{formatDuration(getServiceDuration(service))}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-lg font-bold text-gray-600">
+                    <div className="flex items-center gap-1 text-xl font-bold text-orange-500">
                       <DollarSign className="w-5 h-5" />
-                      {formatCurrency(getServiceTotal(service))}
+                      <span>{formatCurrency(getServiceTotal(service))}</span>
                     </div>
                   </div>
 
                   {hasAddons && (
                     <button
                       onClick={() => toggleExpanded(service.id)}
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                      className="flex items-center gap-2 text-sm text-gray-300 hover:text-white font-semibold transition-colors group"
                     >
-                      <Plus className="w-4 h-4" />
-                      {isExpanded ? 'Hide Add-ons' : 'Add-ons Available'}
+                      <Plus className="w-4 h-4 group-hover:text-orange-500 transition-colors" />
+                      <span>{isExpanded ? 'Hide Add-ons' : 'Add-ons Available'}</span>
                       {isExpanded ? (
                         <ChevronDown className="w-4 h-4" />
                       ) : (
@@ -200,12 +200,12 @@ export function ServiceList({
 
             {/* Add-ons Section */}
             {hasAddons && isExpanded && (
-              <div className="border-t border-gray-200 bg-gray-50 p-4">
-                <h4 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
+              <div className="border-t border-gray-700 bg-black/30 p-5">
+                <h4 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-orange-500" />
                   Select Add-ons
                 </h4>
-                <p className="text-xs text-gray-600 mb-3">Choose optional add-ons to enhance your service</p>
+                <p className="text-xs text-gray-400 mb-4">Enhance your service with optional add-ons</p>
                 <div className="space-y-3">
                   {service.addons?.map((addon) => {
                     const isAddonSelected = selectedAddons[service.id]?.includes(addon.id) || false;
@@ -213,40 +213,41 @@ export function ServiceList({
                     return (
                       <div 
                         key={addon.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                        className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
                           isAddonSelected
-                            ? 'border-gray-300 bg-gray-100'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
+                            ? 'border-orange-500 bg-orange-500/10 shadow-md'
+                            : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:bg-gray-800'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => onAddonToggle(service.id, addon.id)}
                             disabled={!isSelected}
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                            className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
                               isAddonSelected
-                                ? 'border-gray-500 bg-gray-500'
+                                ? 'border-orange-500 bg-orange-500 shadow-lg shadow-orange-500/30'
                                 : isSelected
-                                ? 'border-gray-300 hover:border-gray-400'
-                                : 'border-gray-200 opacity-50 cursor-not-allowed'
+                                ? 'border-gray-600 hover:border-orange-500'
+                                : 'border-gray-700 opacity-30 cursor-not-allowed'
                             }`}
                           >
-                            {isAddonSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                            {isAddonSelected && <CheckCircle className="w-4 h-4 text-black" strokeWidth={3} />}
                           </button>
                           
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{addon.name}</p>
-                            <p className="text-xs text-gray-600">{addon.description}</p>
+                            <p className="font-semibold text-white text-sm">{addon.name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{addon.description}</p>
                           </div>
                         </div>
                         
                         <div className="text-right">
                           {addon.duration > 0 && (
-                            <div className="text-xs text-gray-500 mb-1">
+                            <div className="text-xs text-gray-400 mb-1 flex items-center gap-1 justify-end">
+                              <Clock className="w-3 h-3" />
                               +{formatDuration(addon.duration)}
                             </div>
                           )}
-                          <div className="font-semibold text-gray-600">
+                          <div className="font-bold text-orange-500 text-base">
                             +{formatCurrency(addon.price)}
                           </div>
                         </div>

@@ -429,12 +429,35 @@ function BookPageContent() {
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-serif font-bold text-black mb-2 tracking-tight">Select Services</h2>
-        <p className="text-gray-600">Choose the services you&apos;d like to book</p>
+        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Select Services</h2>
+        <p className="text-gray-400">Choose the services you&apos;d like to book</p>
+      </div>
+
+      {/* Important Information - Moved to Top */}
+      <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/30 rounded-xl p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="bg-orange-500 rounded-full p-2.5 flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-black" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-white mb-1">Important Information</h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
+                Please review our booking instructions before scheduling your appointment
+              </p>
+            </div>
+          </div>
+          <Link 
+            href="/instructions" 
+            className="bg-white text-black px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all hover:scale-105 text-center shadow-lg whitespace-nowrap"
+          >
+            View Instructions
+          </Link>
+        </div>
       </div>
       
       {errors.services && (
-        <div className="bg-gray-100 border border-gray-300 text-gray-900 px-4 py-3 rounded-md">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
           {errors.services}
         </div>
       )}
@@ -447,32 +470,9 @@ function BookPageContent() {
         onAddonToggle={handleAddonToggle}
       />
 
-      {/* Quick Instructions Link */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="bg-black rounded-full p-2 flex-shrink-0">
-              <AlertCircle className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-black mb-1">Important Information</h3>
-              <p className="text-sm text-gray-900 leading-relaxed">
-                Please review our booking instructions before scheduling your appointment
-              </p>
-            </div>
-          </div>
-          <Link 
-            href="/instructions" 
-            className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors text-center shadow-sm"
-          >
-            View Instructions
-          </Link>
-        </div>
-      </div>
-
       {formData.selectedServices.length > 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">Selected Services:</h3>
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5">
+          <h3 className="font-bold text-white mb-4 text-lg">Selected Services:</h3>
           <div className="space-y-3">
             {selectedServices.map((service) => {
               const serviceAddons = formData.selectedAddons[service.id] || [];
@@ -484,17 +484,17 @@ function BookPageContent() {
               return (
                 <div key={service.id} className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-800 font-medium">{service.name}</span>
-                    <span className="text-gray-800 font-medium">{formatCurrency(service.price)}</span>
+                    <span className="text-gray-300 font-medium">{service.name}</span>
+                    <span className="text-white font-semibold">{formatCurrency(service.price)}</span>
                   </div>
                   {serviceAddons.length > 0 && (
                     <div className="pl-4 space-y-1">
                       {serviceAddons.map(addonId => {
                         const addon = service.addons?.find(a => a.id === addonId);
                         return addon ? (
-                          <div key={addonId} className="flex justify-between text-xs text-gray-600">
+                          <div key={addonId} className="flex justify-between text-xs text-gray-400">
                             <span>+ {addon.name}</span>
-                            <span>+{formatCurrency(addon.price)}</span>
+                            <span className="text-orange-400">+{formatCurrency(addon.price)}</span>
                           </div>
                         ) : null;
                       })}
@@ -504,9 +504,9 @@ function BookPageContent() {
               );
             })}
           </div>
-          <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between font-semibold text-gray-900">
-            <span>Total: {formatDuration(totalDuration)}</span>
-            <span>{formatCurrency(totalPrice)}</span>
+          <div className="border-t border-gray-700 mt-4 pt-4 flex justify-between font-bold text-lg">
+            <span className="text-gray-300">Total: {formatDuration(totalDuration)}</span>
+            <span className="text-orange-500">{formatCurrency(totalPrice)}</span>
           </div>
         </div>
       )}
@@ -514,7 +514,7 @@ function BookPageContent() {
       <button
         onClick={handleNext}
         disabled={formData.selectedServices.length === 0}
-        className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-600 disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 transition-all hover:scale-[1.02] shadow-lg"
       >
         Continue to Date & Time
       </button>
@@ -524,14 +524,14 @@ function BookPageContent() {
   const renderStep2 = () => (
     <div className="space-y-6 lg:space-y-8">
       <div className="text-center">
-        <h2 className="text-2xl lg:text-3xl font-serif font-bold text-black mb-2 tracking-tight">Select Date & Time</h2>
-        <p className="text-gray-600 text-sm lg:text-base">Choose your preferred appointment date and time</p>
+        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2 tracking-tight">Select Date & Time</h2>
+        <p className="text-gray-400 text-sm lg:text-base">Choose your preferred appointment date and time</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 items-stretch">
         <div className="flex flex-col">
-          <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-lg h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">Select Date</h3>
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4 lg:p-6 shadow-lg h-full flex flex-col">
+            <h3 className="text-lg font-bold text-white mb-4 text-center">Select Date</h3>
             <div className="flex-1 flex items-center justify-center">
               <div className="w-full max-w-sm">
                 <Calendar
@@ -539,7 +539,7 @@ function BookPageContent() {
                   value={formData.appointmentDate}
                   minDate={new Date()}
                   maxDate={addDays(new Date(), 60)}
-                  className="react-calendar"
+                  className="react-calendar-dark"
                   tileDisabled={({ date, view }) => {
                     if (view !== 'month') return false;
                     
@@ -567,24 +567,24 @@ function BookPageContent() {
         </div>
 
         <div className="flex flex-col">
-          <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-lg h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4 lg:p-6 shadow-lg h-full flex flex-col">
+            <h3 className="text-lg font-bold text-white mb-2 text-center">
               Available Times
             </h3>
-            <p className="text-sm text-gray-600 mb-2 text-center flex items-center justify-center">
-              <CalendarIcon className="w-4 h-4 mr-2 text-gray-500" />
+            <p className="text-sm text-gray-300 mb-2 text-center flex items-center justify-center">
+              <CalendarIcon className="w-4 h-4 mr-2 text-orange-500" />
               {format(formData.appointmentDate, 'EEEE, MMMM d, yyyy')}
             </p>
             {totalDuration > 0 && (
-              <p className="text-xs text-gray-500 mb-4 text-center">
+              <p className="text-xs text-gray-400 mb-4 text-center">
                 Your service takes {formatDuration(totalDuration)}
               </p>
             )}
             
             {errors.time && (
-              <div className="bg-gray-100 border border-gray-300 text-gray-900 px-4 py-3 rounded-lg mb-4 flex items-center">
-                <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-gray-900 text-xs font-bold">!</span>
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg mb-4 flex items-center">
+                <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-red-400 text-xs font-bold">!</span>
                 </div>
                 {errors.time}
               </div>
@@ -595,8 +595,8 @@ function BookPageContent() {
                 {loadingSlots ? (
                   <div className="flex items-center justify-center py-12 h-full">
                     <div className="flex flex-col items-center space-y-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-                      <p className="text-gray-600 text-sm">Loading available times...</p>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                      <p className="text-gray-400 text-sm">Loading available times...</p>
                     </div>
                   </div>
                 ) : (
@@ -606,12 +606,12 @@ function BookPageContent() {
                         key={slot.time}
                         onClick={() => setFormData(prev => ({ ...prev, selectedTime: slot.time }))}
                         disabled={!slot.available}
-                        className={`p-3 text-sm font-semibold rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 min-h-[52px] ${
+                        className={`p-3 text-sm font-bold rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 min-h-[52px] ${
                           formData.selectedTime === slot.time
-                            ? 'bg-black text-white border-black shadow-md scale-105'
+                            ? 'bg-orange-500 text-black border-orange-500 shadow-lg shadow-orange-500/30 scale-105'
                             : slot.available
-                            ? 'bg-white text-gray-900 border-gray-300 hover:border-gray-900 hover:bg-gray-50 hover:shadow-sm'
-                            : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
+                            ? 'bg-gray-800 text-white border-gray-700 hover:border-orange-500 hover:bg-gray-700 hover:shadow-md'
+                            : 'bg-gray-900 text-gray-600 border-gray-800 cursor-not-allowed opacity-40'
                         }`}
                         style={{
                           animationDelay: `${index * 50}ms`,
@@ -629,11 +629,11 @@ function BookPageContent() {
 
               {!loadingSlots && availableSlots.filter(slot => slot.available).length === 0 && (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Clock className="w-8 h-8 text-gray-400" />
+                  <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-700">
+                    <Clock className="w-8 h-8 text-gray-500" />
                   </div>
-                  <p className="text-gray-600 font-medium mb-2">No available times</p>
-                  <p className="text-gray-500 text-sm">Please select another date to see available time slots.</p>
+                  <p className="text-white font-semibold mb-2">No available times</p>
+                  <p className="text-gray-400 text-sm">Please select another date to see available time slots.</p>
                 </div>
               )}
             </div>
@@ -643,9 +643,9 @@ function BookPageContent() {
 
       {/* Booking Summary */}
       {formData.selectedServices.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-gray-700" />
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-orange-500" />
             Booking Summary
           </h3>
           <div className="space-y-4">
@@ -657,11 +657,11 @@ function BookPageContent() {
               }, 0);
               
               return (
-                <div key={service.id} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                <div key={service.id} className="pb-3 border-b border-gray-700 last:border-0 last:pb-0">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900">{service.name}</h4>
-                      <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+                      <h4 className="font-bold text-white">{service.name}</h4>
+                      <div className="flex items-center gap-3 text-sm text-gray-400 mt-1">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {formatDuration(service.duration)}
@@ -678,12 +678,12 @@ function BookPageContent() {
                       {serviceAddons.map(addonId => {
                         const addon = service.addons?.find(a => a.id === addonId);
                         return addon ? (
-                          <div key={addonId} className="flex justify-between text-xs text-gray-600">
+                          <div key={addonId} className="flex justify-between text-xs text-gray-400">
                             <span className="flex items-center gap-1">
-                              <span className="w-1 h-1 bg-black rounded-full"></span>
+                              <span className="w-1 h-1 bg-orange-500 rounded-full"></span>
                               {addon.name}
                             </span>
-                            <span>+{formatCurrency(addon.price)}</span>
+                            <span className="text-orange-400">+{formatCurrency(addon.price)}</span>
                           </div>
                         ) : null;
                       })}
@@ -693,14 +693,14 @@ function BookPageContent() {
               );
             })}
           </div>
-          <div className="border-t border-gray-300 mt-4 pt-4 flex justify-between items-center">
+          <div className="border-t border-gray-700 mt-4 pt-4 flex justify-between items-center">
             <div>
-              <p className="text-sm text-gray-600">Total Duration</p>
-              <p className="text-lg font-bold text-black">{formatDuration(totalDuration)}</p>
+              <p className="text-sm text-gray-400">Total Duration</p>
+              <p className="text-lg font-bold text-white">{formatDuration(totalDuration)}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-600">Total Price</p>
-              <p className="text-2xl font-bold text-black">{formatCurrency(totalPrice)}</p>
+              <p className="text-sm text-gray-400">Total Price</p>
+              <p className="text-2xl font-bold text-orange-500">{formatCurrency(totalPrice)}</p>
             </div>
           </div>
         </div>
@@ -709,14 +709,14 @@ function BookPageContent() {
       <div className="flex flex-col sm:flex-row gap-4">
         <button
           onClick={handleBack}
-          className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+          className="flex-1 border border-gray-700 bg-gray-800 text-white py-4 rounded-xl font-semibold hover:bg-gray-700 transition-all text-lg"
         >
           Back to Services
         </button>
         <button
           onClick={handleNext}
           disabled={!formData.selectedTime}
-          className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-all hover:scale-[1.02] shadow-lg text-lg"
         >
           Continue to Details
         </button>
@@ -727,134 +727,134 @@ function BookPageContent() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-serif font-bold text-black mb-2 tracking-tight">Your Information</h2>
-        <p className="text-gray-600">Please provide your contact details</p>
+        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Your Information</h2>
+        <p className="text-gray-400">Please provide your contact details</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-2">
-            <User className="w-4 h-4 inline mr-2" />
+          <label className="block text-sm font-semibold text-white mb-2">
+            <User className="w-4 h-4 inline mr-2 text-orange-500" />
             First Name *
           </label>
           <input
             type="text"
             value={formData.firstName}
             onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
-              errors.firstName ? 'border-red-300' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
+              errors.firstName ? 'border-red-500' : 'border-gray-700'
             }`}
             placeholder="Enter your first name"
           />
           {errors.firstName && (
-            <p className="text-gray-900 text-sm mt-1">{errors.firstName}</p>
+            <p className="text-red-400 text-sm mt-1">{errors.firstName}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-2">
-            <User className="w-4 h-4 inline mr-2" />
+          <label className="block text-sm font-semibold text-white mb-2">
+            <User className="w-4 h-4 inline mr-2 text-orange-500" />
             Last Name *
           </label>
           <input
             type="text"
             value={formData.lastName}
             onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
-              errors.lastName ? 'border-red-300' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
+              errors.lastName ? 'border-red-500' : 'border-gray-700'
             }`}
             placeholder="Enter your last name"
           />
           {errors.lastName && (
-            <p className="text-gray-900 text-sm mt-1">{errors.lastName}</p>
+            <p className="text-red-400 text-sm mt-1">{errors.lastName}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-2">
-            <Mail className="w-4 h-4 inline mr-2" />
+          <label className="block text-sm font-semibold text-white mb-2">
+            <Mail className="w-4 h-4 inline mr-2 text-orange-500" />
             Email Address *
           </label>
           <input
             type="email"
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
-              errors.email ? 'border-red-300' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
+              errors.email ? 'border-red-500' : 'border-gray-700'
             }`}
             placeholder="Enter your email address"
           />
           {errors.email && (
-            <p className="text-gray-900 text-sm mt-1">{errors.email}</p>
+            <p className="text-red-400 text-sm mt-1">{errors.email}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-2">
-            <Phone className="w-4 h-4 inline mr-2" />
+          <label className="block text-sm font-semibold text-white mb-2">
+            <Phone className="w-4 h-4 inline mr-2 text-orange-500" />
             Phone Number *
           </label>
           <input
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white ${
-              errors.phone ? 'border-red-300' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
+              errors.phone ? 'border-red-500' : 'border-gray-700'
             }`}
             placeholder="Enter your phone number"
           />
           {errors.phone && (
-            <p className="text-gray-900 text-sm mt-1">{errors.phone}</p>
+            <p className="text-red-400 text-sm mt-1">{errors.phone}</p>
           )}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-800 mb-2">
-          <MessageSquare className="w-4 h-4 inline mr-2" />
+        <label className="block text-sm font-semibold text-white mb-2">
+          <MessageSquare className="w-4 h-4 inline mr-2 text-orange-500" />
           Additional Notes (Optional)
         </label>
         <textarea
           value={formData.notes}
           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
           rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-900 placeholder-gray-500 bg-white"
+          className="w-full px-4 py-3 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all"
           placeholder="Any special requests or notes for your appointment..."
         />
       </div>
 
       {/* Booking Summary */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Summary</h3>
-        <div className="space-y-2 text-sm">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Booking Summary</h3>
+        <div className="space-y-3 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-700">Date:</span>
-            <span className="font-medium text-gray-900">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
+            <span className="text-gray-400">Date:</span>
+            <span className="font-medium text-white">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-700">Time:</span>
-            <span className="font-medium text-gray-900">{formData.selectedTime}</span>
+            <span className="text-gray-400">Time:</span>
+            <span className="font-medium text-white">{formData.selectedTime}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-700">Duration:</span>
-            <span className="font-medium text-gray-900">{formatDuration(totalDuration)}</span>
+            <span className="text-gray-400">Duration:</span>
+            <span className="font-medium text-white">{formatDuration(totalDuration)}</span>
           </div>
-          <div className="border-t border-gray-200 pt-2 mt-2">
-            <div className="flex justify-between text-lg font-semibold text-gray-900">
-              <span>Total:</span>
-              <span>{formatCurrency(totalPrice)}</span>
+          <div className="border-t border-gray-700 pt-3 mt-3">
+            <div className="flex justify-between text-xl font-bold">
+              <span className="text-gray-300">Total:</span>
+              <span className="text-orange-500">{formatCurrency(totalPrice)}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Important Information */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h4 className="font-semibold text-black mb-3 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5">
+        <h4 className="font-bold text-white mb-3 flex items-center gap-2 text-lg">
+          <MessageSquare className="w-5 h-5 text-orange-500" />
           Important Information
         </h4>
-        <div className="space-y-2 text-sm text-gray-900">
+        <div className="space-y-2 text-sm text-gray-300">
           <p>• Please arrive 10 minutes early for your appointment</p>
           <p>• 24-hour cancellation policy applies</p>
           <p>• Payment is due at time of service</p>
@@ -863,11 +863,11 @@ function BookPageContent() {
       </div>
 
       {bookingError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-red-800 font-medium">Booking Failed</p>
-            <p className="text-red-700 text-sm mt-1">{bookingError}</p>
+            <p className="text-red-400 font-semibold">Booking Failed</p>
+            <p className="text-red-300 text-sm mt-1">{bookingError}</p>
           </div>
         </div>
       )}
@@ -875,14 +875,14 @@ function BookPageContent() {
       <div className="flex flex-col sm:flex-row gap-4">
         <button
           onClick={handleBack}
-          className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+          className="flex-1 border border-gray-700 bg-gray-800 text-white py-4 rounded-xl font-semibold hover:bg-gray-700 transition-all text-lg"
         >
           Back to Date & Time
         </button>
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
+          className="flex-1 bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 transition-all hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg text-lg"
         >
           {loading ? (
             <>
@@ -1014,18 +1014,18 @@ function BookPageContent() {
 
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between sm:justify-start h-16">
-            <Link href="/" className="flex items-center text-gray-700 hover:text-black transition-colors">
+          <div className="flex items-center justify-between sm:justify-start h-20">
+            <Link href="/" className="flex items-center text-gray-300 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5 mr-2" />
-              <span className="hidden sm:inline font-medium">Back to Home</span>
+              <span className="hidden sm:inline font-medium">Back</span>
               <span className="sm:hidden font-medium">Back</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-serif font-bold text-black sm:ml-8 tracking-tight">
-              <span className="hidden sm:inline">Book Appointment</span>
+            <h1 className="text-xl sm:text-2xl font-bold sm:ml-8 tracking-tight">
+              <span className="hidden sm:inline">Book <span className="text-orange-500">Appointment</span></span>
               <span className="sm:hidden">Book</span>
             </h1>
           </div>
@@ -1034,32 +1034,32 @@ function BookPageContent() {
 
       {/* Progress Bar */}
       {step < 5 && (
-        <div className="bg-white border-b">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="bg-black border-b border-gray-800">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-center sm:justify-between">
               {[1, 2, 3, 4].map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
                       step >= stepNumber
-                        ? 'bg-black text-white'
-                        : 'bg-gray-200 text-gray-700'
+                        ? 'bg-orange-500 text-black'
+                        : 'bg-gray-800 text-gray-400 border border-gray-700'
                     }`}
                   >
                     {stepNumber}
                   </div>
                   <span
                     className={`ml-2 text-xs sm:text-sm font-medium ${
-                      step >= stepNumber ? 'text-black' : 'text-gray-600'
+                      step >= stepNumber ? 'text-white' : 'text-gray-500'
                     }`}
                   >
                     {stepNumber === 1 ? 'Services' : stepNumber === 2 ? 'Date & Time' : stepNumber === 3 ? 'Details' : 'Payment'}
                   </span>
                   {stepNumber < 4 && (
-                    <div className="flex-1 h-1 bg-gray-200 mx-2 sm:mx-4 rounded min-w-[15px] sm:min-w-[30px]">
+                    <div className="flex-1 h-1 bg-gray-800 mx-2 sm:mx-4 rounded min-w-[15px] sm:min-w-[30px]">
                       <div
                         className={`h-full rounded transition-all duration-300 ${
-                          step > stepNumber ? 'bg-black w-full' : 'bg-gray-200 w-0'
+                          step > stepNumber ? 'bg-orange-500 w-full' : 'bg-gray-800 w-0'
                         }`}
                       />
                     </div>
@@ -1085,10 +1085,10 @@ function BookPageContent() {
 export default function BookPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          <p className="mt-4 text-gray-400">Loading...</p>
         </div>
       </div>
     }>
