@@ -741,8 +741,8 @@ function BookPageContent() {
             type="text"
             value={formData.firstName}
             onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
-              errors.firstName ? 'border-red-500' : 'border-gray-700'
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
+              errors.firstName ? 'border-red-500' : 'border-gray-600'
             }`}
             placeholder="Enter your first name"
           />
@@ -760,8 +760,8 @@ function BookPageContent() {
             type="text"
             value={formData.lastName}
             onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
-              errors.lastName ? 'border-red-500' : 'border-gray-700'
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
+              errors.lastName ? 'border-red-500' : 'border-gray-600'
             }`}
             placeholder="Enter your last name"
           />
@@ -779,8 +779,8 @@ function BookPageContent() {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
-              errors.email ? 'border-red-500' : 'border-gray-700'
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
+              errors.email ? 'border-red-500' : 'border-gray-600'
             }`}
             placeholder="Enter your email address"
           />
@@ -798,8 +798,8 @@ function BookPageContent() {
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all ${
-              errors.phone ? 'border-red-500' : 'border-gray-700'
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
+              errors.phone ? 'border-red-500' : 'border-gray-600'
             }`}
             placeholder="Enter your phone number"
           />
@@ -818,7 +818,7 @@ function BookPageContent() {
           value={formData.notes}
           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
           rows={4}
-          className="w-full px-4 py-3 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 bg-gray-800 transition-all"
+          className="w-full px-4 py-3 border-2 border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all"
           placeholder="Any special requests or notes for your appointment..."
         />
       </div>
