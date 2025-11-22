@@ -142,7 +142,7 @@ export const OMAKHAIR_CONTACT: ContactInfo = {
     zip: '',
     country: 'USA'
   },
-  note: 'Professional Hair & Makeup Services',
+  note: 'Professional Hair Services',
   socialMedia: {
     snapchat: 'https://t.snapchat.com/Jh69xMdA',
     instagram: 'https://www.instagram.com/shopper_huz',

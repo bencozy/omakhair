@@ -17,11 +17,11 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://laidbyoma.com'),
   title: {
-    default: "LaidbyOma - Professional Hair & Beauty Services",
+    default: "LaidbyOma - Professional Hair Services",
     template: "%s | LaidbyOma"
   },
-  description: "Premier hair and beauty booking platform. Specializing in frontal installation, braids, wig making, and professional hair care services in your area.",
-  keywords: ["hair styling", "makeup artist", "braids", "frontal installation", "wig making", "hair coloring", "knotless braids", "box braids", "beauty services", "professional hairstylist"],
+  description: "Premier hair booking platform. Specializing in frontal installation, braids, wig installation, and professional hair care services in your area.",
+  keywords: ["hair styling", "braids", "frontal installation", "wig installation", "knotless braids", "box braids", "sew-in", "quick weave", "professional hairstylist"],
   authors: [{ name: "LaidbyOma" }],
   creator: "LaidbyOma",
   publisher: "LaidbyOma",
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'LaidbyOma',
-    title: 'LaidbyOma - Professional Hair & Beauty Services',
-    description: 'Premier hair and beauty booking platform. Specializing in frontal installation, braids, wig making, and professional hair care services.',
+    title: 'LaidbyOma - Professional Hair Services',
+    description: 'Premier hair booking platform. Specializing in frontal installation, braids, wig installation, and professional hair care services.',
     images: [{
       url: '/og-image.jpg',
       width: 1200,
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LaidbyOma - Professional Hair & Beauty Services',
-    description: 'Premier hair and beauty booking platform. Book your appointment today!',
+    title: 'LaidbyOma - Professional Hair Services',
+    description: 'Premier hair booking platform. Book your appointment today!',
     images: ['/og-image.jpg'],
   },
   robots: {
@@ -75,7 +75,7 @@ export default function RootLayout({
     '@context': 'https://schema.org',
     '@type': 'HairSalon',
     name: 'LaidbyOma',
-    description: 'Premier hair and beauty services specializing in braids, frontal installation, wig making, and professional hair care.',
+    description: 'Premier hair services specializing in braids, frontal installation, wig installation, and professional hair care.',
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://laidbyoma.com',
     logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://laidbyoma.com'}/laidbyoma.png`,
     image: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://laidbyoma.com'}/laidbyoma.png`,
@@ -120,8 +120,8 @@ export default function RootLayout({
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: 'Wig Making & Styling',
-            description: 'Custom wig creation and professional wig styling services.',
+            name: 'Wig Installation & Styling',
+            description: 'Professional wig installation and styling services.',
           },
         },
       ],

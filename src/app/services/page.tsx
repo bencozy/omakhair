@@ -1,29 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowLeft, Clock, DollarSign, Calendar, Star, CheckCircle, Award, Users, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Clock, DollarSign, Calendar, CheckCircle, Award, Users, ChevronRight } from 'lucide-react';
 import { getServices } from '@/lib/utils';
 
 export default function ServicesPage() {
   const services = getServices();
-
-  // Get service image
-  const getServiceImage = (service: any, index: number) => {
-    const lowerName = service.name.toLowerCase();
-    const lowerCategory = service.category.toLowerCase();
-    
-    if (lowerCategory.includes('wig') || lowerName.includes('wig')) {
-      return '/wigfrontal.png';
-    } else if (lowerName.includes('knotless') || lowerName.includes('box braid')) {
-      return '/afrobraidfrontal.png';
-    } else if (lowerCategory.includes('braid') || lowerName.includes('braid')) {
-      return index % 2 === 0 ? '/europebraidfrontal.png' : '/afrobraidsideview.png';
-    } else if (lowerName.includes('frontal') || lowerName.includes('closure')) {
-      return '/europebraidesideview.png';
-    }
-    return '/afrobraidfrontal.png';
-  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -69,7 +51,7 @@ export default function ServicesPage() {
               Our Services
             </h2>
             <p className="text-xl sm:text-2xl text-gray-300 mb-12 leading-relaxed">
-              Professional hair and beauty services tailored to enhance your natural beauty. 
+              Professional hair services tailored to enhance your natural beauty. 
               Expert craftsmanship, premium products, and exceptional care.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
@@ -114,31 +96,21 @@ export default function ServicesPage() {
                 .filter(s => s.category === 'Braids')
                 .map((service, index) => (
                   <div key={service.id} className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 hover:border-orange-500 transition-all duration-300">
-                    <div className="h-80 relative overflow-hidden">
-                      <Image
-                        src={getServiceImage(service, index)}
-                        alt={service.name}
-                        fill
-                        className="object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                        style={{ objectPosition: 'center 20%' }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
-                      <div className="absolute bottom-4 left-4">
-                        <span className="inline-block px-3 py-1 bg-orange-500 text-black text-xs font-bold rounded-full">
+                    <div className="p-8">
+                      <div className="mb-4">
+                        <span className="inline-block px-4 py-2 bg-orange-500 text-black text-xs font-bold rounded-full">
                           {service.category}
                         </span>
                       </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-orange-500 transition-colors">{service.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{service.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-orange-500">${service.price}</span>
+                      <h3 className="text-2xl font-bold mb-3 group-hover:text-orange-500 transition-colors">{service.name}</h3>
+                      <p className="text-gray-400 text-sm mb-6 leading-relaxed">{service.description}</p>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-700">
+                        <span className="text-3xl font-bold text-orange-500">${service.price}</span>
                         <Link 
                           href="/book"
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors group/link"
                         >
-                          Book Now <ChevronRight className="w-4 h-4" />
+                          Book Now <ChevronRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                         </Link>
                       </div>
                     </div>
@@ -165,31 +137,21 @@ export default function ServicesPage() {
                 .filter(s => s.category === 'Installation')
                 .map((service, index) => (
                   <div key={service.id} className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 hover:border-orange-500 transition-all duration-300">
-                    <div className="h-80 relative overflow-hidden">
-                      <Image
-                        src={getServiceImage(service, index)}
-                        alt={service.name}
-                        fill
-                        className="object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                        style={{ objectPosition: 'center 20%' }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
-                      <div className="absolute bottom-4 left-4">
-                        <span className="inline-block px-3 py-1 bg-orange-500 text-black text-xs font-bold rounded-full">
+                    <div className="p-8">
+                      <div className="mb-4">
+                        <span className="inline-block px-4 py-2 bg-orange-500 text-black text-xs font-bold rounded-full">
                           {service.category}
                         </span>
                       </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-orange-500 transition-colors">{service.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{service.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-orange-500">${service.price}</span>
+                      <h3 className="text-2xl font-bold mb-3 group-hover:text-orange-500 transition-colors">{service.name}</h3>
+                      <p className="text-gray-400 text-sm mb-6 leading-relaxed">{service.description}</p>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-700">
+                        <span className="text-3xl font-bold text-orange-500">${service.price}</span>
                         <Link 
                           href="/book"
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors group/link"
                         >
-                          Book Now <ChevronRight className="w-4 h-4" />
+                          Book Now <ChevronRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                         </Link>
                       </div>
                     </div>
@@ -208,7 +170,7 @@ export default function ServicesPage() {
                 Wig Services
               </h3>
               <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-                Custom wig creation and professional styling services
+                Professional wig installation and styling services
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -216,31 +178,21 @@ export default function ServicesPage() {
                 .filter(s => s.category === 'Wigs')
                 .map((service, index) => (
                   <div key={service.id} className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 hover:border-orange-500 transition-all duration-300">
-                    <div className="h-80 relative overflow-hidden">
-                      <Image
-                        src={getServiceImage(service, index)}
-                        alt={service.name}
-                        fill
-                        className="object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                        style={{ objectPosition: 'center 20%' }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
-                      <div className="absolute bottom-4 left-4">
-                        <span className="inline-block px-3 py-1 bg-orange-500 text-black text-xs font-bold rounded-full">
+                    <div className="p-8">
+                      <div className="mb-4">
+                        <span className="inline-block px-4 py-2 bg-orange-500 text-black text-xs font-bold rounded-full">
                           {service.category}
                         </span>
                       </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-orange-500 transition-colors">{service.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{service.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-orange-500">${service.price}</span>
+                      <h3 className="text-2xl font-bold mb-3 group-hover:text-orange-500 transition-colors">{service.name}</h3>
+                      <p className="text-gray-400 text-sm mb-6 leading-relaxed">{service.description}</p>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-700">
+                        <span className="text-3xl font-bold text-orange-500">${service.price}</span>
                         <Link 
                           href="/book"
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors group/link"
                         >
-                          Book Now <ChevronRight className="w-4 h-4" />
+                          Book Now <ChevronRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                         </Link>
                       </div>
                     </div>
@@ -249,100 +201,39 @@ export default function ServicesPage() {
             </div>
           </div>
 
-          {/* Category: Hair Care & Color */}
+          {/* Category: Sew-In Services */}
           <div className="mb-20">
             <div className="text-center mb-12">
               <div className="inline-block px-4 py-2 bg-orange-500 text-black text-sm font-semibold rounded-full mb-4">
-                HAIR CARE
+                SEW-IN
               </div>
               <h3 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-                Hair Care & Color
+                Sew-In Services
               </h3>
               <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-                Maintain healthy hair with our care and coloring services
+                Professional sew-in installations for versatile styling
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {services
-                .filter(s => s.category === 'Hair Care' || s.category === 'Color')
+                .filter(s => s.category === 'sew-in')
                 .map((service, index) => (
                   <div key={service.id} className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 hover:border-orange-500 transition-all duration-300">
-                    <div className="h-80 relative overflow-hidden">
-                      <Image
-                        src={getServiceImage(service, index)}
-                        alt={service.name}
-                        fill
-                        className="object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                        style={{ objectPosition: 'center 20%' }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
-                      <div className="absolute bottom-4 left-4">
-                        <span className="inline-block px-3 py-1 bg-orange-500 text-black text-xs font-bold rounded-full">
+                    <div className="p-8">
+                      <div className="mb-4">
+                        <span className="inline-block px-4 py-2 bg-orange-500 text-black text-xs font-bold rounded-full">
                           {service.category}
                         </span>
                       </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-orange-500 transition-colors">{service.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{service.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-orange-500">${service.price}</span>
+                      <h3 className="text-2xl font-bold mb-3 group-hover:text-orange-500 transition-colors">{service.name}</h3>
+                      <p className="text-gray-400 text-sm mb-6 leading-relaxed">{service.description}</p>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-700">
+                        <span className="text-3xl font-bold text-orange-500">${service.price}</span>
                         <Link 
                           href="/book"
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors group/link"
                         >
-                          Book Now <ChevronRight className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          {/* Category: Makeup & Beauty */}
-          <div className="mb-20">
-            <div className="text-center mb-12">
-              <div className="inline-block px-4 py-2 bg-orange-500 text-black text-sm font-semibold rounded-full mb-4">
-                MAKEUP
-              </div>
-              <h3 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-                Makeup & Beauty
-              </h3>
-              <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-                Complete your look with professional makeup services
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {services
-                .filter(s => s.category === 'Makeup')
-                .map((service, index) => (
-                  <div key={service.id} className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 hover:border-orange-500 transition-all duration-300">
-                    <div className="h-80 relative overflow-hidden">
-                      <Image
-                        src={getServiceImage(service, index)}
-                        alt={service.name}
-                        fill
-                        className="object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                        style={{ objectPosition: 'center 20%' }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
-                      <div className="absolute bottom-4 left-4">
-                        <span className="inline-block px-3 py-1 bg-orange-500 text-black text-xs font-bold rounded-full">
-                          {service.category}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-orange-500 transition-colors">{service.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{service.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-orange-500">${service.price}</span>
-                        <Link 
-                          href="/book"
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors"
-                        >
-                          Book Now <ChevronRight className="w-4 h-4" />
+                          Book Now <ChevronRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                         </Link>
                       </div>
                     </div>
@@ -439,7 +330,7 @@ export default function ServicesPage() {
             <h3 className="text-2xl font-bold mb-4">
               Laid<span className="text-orange-500">byOma</span>
             </h3>
-            <p className="text-gray-400 mb-4">Premier Hair & Beauty Services</p>
+            <p className="text-gray-400 mb-4">Premier Hair Services</p>
             <p className="text-gray-500 text-sm">
               © {new Date().getFullYear()} LaidbyOma. All rights reserved.
             </p>

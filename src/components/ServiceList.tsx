@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, DollarSign, Star, Crown, CheckCircle, AlertCircle, ChevronDown, ChevronRight, Plus, Minus } from "lucide-react";
+import { Clock, Star, Crown, CheckCircle, AlertCircle, ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { Service, ServiceAddon } from "@/types";
 import { formatCurrency, formatDuration } from "@/lib/utils";
 
@@ -168,15 +168,14 @@ export function ServiceList({
                 </div>
 
                 {/* Pricing and Actions Row */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-700">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-gray-700">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <div className="flex items-center gap-1.5 text-sm text-gray-400">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">{formatDuration(getServiceDuration(service))}</span>
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium whitespace-nowrap">{formatDuration(getServiceDuration(service))}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-xl font-bold text-orange-500">
-                      <DollarSign className="w-5 h-5" />
-                      <span>{formatCurrency(getServiceTotal(service))}</span>
+                    <div className="text-xl sm:text-2xl font-bold text-orange-500">
+                      {formatCurrency(getServiceTotal(service))}
                     </div>
                   </div>
 
@@ -185,12 +184,12 @@ export function ServiceList({
                       onClick={() => toggleExpanded(service.id)}
                       className="flex items-center gap-2 text-sm text-gray-300 hover:text-white font-semibold transition-colors group"
                     >
-                      <Plus className="w-4 h-4 group-hover:text-orange-500 transition-colors" />
-                      <span>{isExpanded ? 'Hide Add-ons' : 'Add-ons Available'}</span>
+                      <Plus className="w-4 h-4 flex-shrink-0 group-hover:text-orange-500 transition-colors" />
+                      <span className="whitespace-nowrap">{isExpanded ? 'Hide Add-ons' : 'Add-ons Available'}</span>
                       {isExpanded ? (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="w-4 h-4 flex-shrink-0" />
                       ) : (
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4 flex-shrink-0" />
                       )}
                     </button>
                   )}

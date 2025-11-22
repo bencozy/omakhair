@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard, Search } from 'lucide-react';
 import Calendar from 'react-calendar';
 import { format, addDays, startOfToday } from 'date-fns';
 import { loadStripe } from '@stripe/stripe-js';
@@ -49,8 +49,23 @@ function BookPageContent() {
   const [pendingBookingId, setPendingBookingId] = useState<string>('');
   const [clientSecret, setClientSecret] = useState<string>('');
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const services = getServices();
+  const filteredServices = services.filter(service => {
+    const query = searchQuery.toLowerCase();
+    const matchesService = 
+      service.name.toLowerCase().includes(query) ||
+      service.description.toLowerCase().includes(query) ||
+      service.category.toLowerCase().includes(query);
+    
+    const matchesAddons = service.addons?.some(addon => 
+      addon.name.toLowerCase().includes(query) ||
+      addon.description.toLowerCase().includes(query)
+    ) || false;
+    
+    return matchesService || matchesAddons;
+  });
   const selectedServices = services.filter(service => formData.selectedServices.includes(service.id));
   const totalPrice = calculateTotalPrice(formData.selectedServices, formData.selectedAddons);
   const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons);
@@ -433,27 +448,31 @@ function BookPageContent() {
         <p className="text-gray-400">Choose the services you&apos;d like to book</p>
       </div>
 
-      {/* Important Information - Moved to Top */}
-      <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/30 rounded-xl p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="bg-orange-500 rounded-full p-2.5 flex-shrink-0">
-              <AlertCircle className="w-5 h-5 text-black" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-white mb-1">Important Information</h3>
-              <p className="text-sm text-gray-300 leading-relaxed">
-                Please review our booking instructions before scheduling your appointment
-              </p>
-            </div>
-          </div>
-          <Link 
-            href="/instructions" 
-            className="bg-white text-black px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all hover:scale-105 text-center shadow-lg whitespace-nowrap"
-          >
-            View Instructions
-          </Link>
+      {/* Search Bar */}
+      <div className="w-full">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search for services..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          )}
         </div>
+        {searchQuery && (
+          <p className="text-sm text-gray-400 mt-2">
+            Found {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
       
       {errors.services && (
@@ -462,13 +481,21 @@ function BookPageContent() {
         </div>
       )}
 
-      <ServiceList
-        services={services}
-        selectedServices={formData.selectedServices}
-        selectedAddons={formData.selectedAddons}
-        onServiceToggle={handleServiceToggle}
-        onAddonToggle={handleAddonToggle}
-      />
+      {filteredServices.length > 0 ? (
+        <ServiceList
+          services={filteredServices}
+          selectedServices={formData.selectedServices}
+          selectedAddons={formData.selectedAddons}
+          onServiceToggle={handleServiceToggle}
+          onAddonToggle={handleAddonToggle}
+        />
+      ) : (
+        <div className="text-center py-12">
+          <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-400 mb-2">No services found</h3>
+          <p className="text-gray-500">Try adjusting your search terms</p>
+        </div>
+      )}
 
       {formData.selectedServices.length > 0 && (
         <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5">
@@ -1018,16 +1045,24 @@ function BookPageContent() {
       {/* Header */}
       <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between sm:justify-start h-20">
+          <div className="flex items-center justify-between h-20">
             <Link href="/" className="flex items-center text-gray-300 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5 mr-2" />
               <span className="hidden sm:inline font-medium">Back</span>
               <span className="sm:hidden font-medium">Back</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-bold sm:ml-8 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
               <span className="hidden sm:inline">Book <span className="text-orange-500">Appointment</span></span>
               <span className="sm:hidden">Book</span>
             </h1>
+            <Link 
+              href="/instructions" 
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-all hover:scale-105 text-sm flex items-center gap-2"
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">View Instructions</span>
+              <span className="sm:hidden">Info</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -1036,27 +1071,29 @@ function BookPageContent() {
       {step < 5 && (
         <div className="bg-black border-b border-gray-800">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-center sm:justify-between">
+            <div className="flex items-center justify-between">
               {[1, 2, 3, 4].map((stepNumber) => (
-                <div key={stepNumber} className="flex items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
-                      step >= stepNumber
-                        ? 'bg-orange-500 text-black'
-                        : 'bg-gray-800 text-gray-400 border border-gray-700'
-                    }`}
-                  >
-                    {stepNumber}
+                <div key={stepNumber} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center gap-2">
+                    <span
+                      className={`text-xs font-medium whitespace-nowrap ${
+                        step >= stepNumber ? 'text-white' : 'text-gray-500'
+                      }`}
+                    >
+                      {stepNumber === 1 ? 'Services' : stepNumber === 2 ? 'Date & Time' : stepNumber === 3 ? 'Details' : 'Payment'}
+                    </span>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
+                        step >= stepNumber
+                          ? 'bg-orange-500 text-black'
+                          : 'bg-gray-800 text-gray-400 border border-gray-700'
+                      }`}
+                    >
+                      {stepNumber}
+                    </div>
                   </div>
-                  <span
-                    className={`ml-2 text-xs sm:text-sm font-medium ${
-                      step >= stepNumber ? 'text-white' : 'text-gray-500'
-                    }`}
-                  >
-                    {stepNumber === 1 ? 'Services' : stepNumber === 2 ? 'Date & Time' : stepNumber === 3 ? 'Details' : 'Payment'}
-                  </span>
                   {stepNumber < 4 && (
-                    <div className="flex-1 h-1 bg-gray-800 mx-2 sm:mx-4 rounded min-w-[15px] sm:min-w-[30px]">
+                    <div className="flex-1 h-1 bg-gray-800 mx-2 sm:mx-4 rounded self-end mb-5">
                       <div
                         className={`h-full rounded transition-all duration-300 ${
                           step > stepNumber ? 'bg-orange-500 w-full' : 'bg-gray-800 w-0'
