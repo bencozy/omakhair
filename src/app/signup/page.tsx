@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, User, Mail, Lock, Phone } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, Phone, Gift } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function SignupPage() {
     email: '',
     phone: '',
     password: '',
+    referredByCode: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -112,6 +113,23 @@ export default function SignupPage() {
                     type="text"
                     required
                     className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+              <div>
+                <label htmlFor="referredByCode" className="sr-only">Referral Code (Optional)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Gift className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="referredByCode"
+                    name="referredByCode"
+                    type="text"
+                    className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                    placeholder="Referral Code (Optional)"
+                    value={formData.referredByCode}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
                     placeholder="Last Name"
                     value={formData.lastName}
                     onChange={handleChange}

@@ -72,6 +72,7 @@ function BookPageContent() {
         if (blockedData.blockedDates) setBlockedDates(blockedData.blockedDates.map((d: any) => new Date(d.date)));
         if (bookingsData.bookings) setExistingBookings(bookingsData.bookings);
 
+  const [waitlistStatus, setWaitlistStatus] = useState<{ status: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ status: 'idle' });
         const serviceId = searchParams.get('service');
         if (serviceId) {
           setFormData(prev => ({ ...prev, selectedServices: [serviceId] }));
@@ -130,6 +131,31 @@ function BookPageContent() {
   };
 
   const handleAddonToggle = (serviceId: string, addonId: string) => {
+
+  const handleJoinWaitlist = async () => {
+    if (!formData.appointmentDate || formData.selectedServices.length === 0) return;
+    
+    setWaitlistStatus({ status: 'loading' });
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId: formData.selectedServices[0],
+          requestedDate: formData.appointmentDate.toISOString()
+        })
+      });
+
+      if (response.ok) {
+        setWaitlistStatus({ status: 'success', message: "You've been added to the waitlist! We'll notify you if a slot opens up." });
+      } else {
+        const error = await response.json();
+        setWaitlistStatus({ status: 'error', message: error.message || "Something went wrong." });
+      }
+    } catch (error) {
+      setWaitlistStatus({ status: 'error', message: "Failed to join waitlist. Please try again later." });
+    }
+  };
     setFormData(prev => {
       const currentAddons = prev.selectedAddons[serviceId] || [];
       const isSelected = currentAddons.includes(addonId);
@@ -464,16 +490,13 @@ function BookPageContent() {
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </Modal>
-                    {errors.time && (
-                      <div className="mt-4 text-red-500 text-xs font-bold uppercase tracking-widest text-center">{errors.time}</div>
+                      </Modal>
                     )}
                   </section>
 
                   <section>
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-700 flex items-center gap-3">
-                      <span className="w-8 h-[1px] bg-gray-300" />
+                    <h3 className="text-xl font-serif font-bold text-black border-b border-gray-100 pb-6 mb-8 flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-nude-peach flex items-center justify-center text-xs">03</div>
                       Personal Information
                     </h3>
                     <div className="grid sm:grid-cols-2 gap-6">
@@ -487,40 +510,10 @@ function BookPageContent() {
                           className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
                         {errors.firstName && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.firstName}</span>}
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Last Name</label>
-                        <input
-                          type="text"
-                          placeholder="Doe"
-                          value={formData.lastName}
-                          onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
-                        />
-                        {errors.lastName && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.lastName}</span>}
-                      </div>
-                      <div className="sm:col-span-2 space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Email Address</label>
-                        <input
-                          type="email"
-                          placeholder="jane@example.com"
-                          value={formData.email}
-                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
-                        />
-                        {errors.email && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.email}</span>}
-                      </div>
-                      <div className="sm:col-span-2 space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Phone Number</label>
-                        <input
-                          type="tel"
-                          placeholder="(555) 000-0000"
-                          value={formData.phone}
-                          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
-                        />
-                        {errors.phone && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.phone}</span>}
-                      </div>
+                    <h3 className="text-xl font-serif font-bold text-black border-b border-gray-100 pb-6 mb-8 flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-nude-peach flex items-center justify-center text-xs">03</div>
+                      Personal Information
+                    </h3>
                       <div className="sm:col-span-2 space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Special Instructions (Optional)</label>
                         <textarea

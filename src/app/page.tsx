@@ -60,6 +60,7 @@ export default function Home() {
 
           <nav className="hidden md:flex items-center space-x-10">
             <Link href="/services" className="text-sm font-medium hover:text-nude-peach-dark transition-colors uppercase tracking-widest">Services</Link>
+            <Link href="/gallery" className="text-sm font-medium hover:text-nude-peach-dark transition-colors uppercase tracking-widest">Gallery</Link>
             <Link href="#about" className="text-sm font-medium hover:text-nude-peach-dark transition-colors uppercase tracking-widest">About</Link>
             <Link href="#contact" className="text-sm font-medium hover:text-nude-peach-dark transition-colors uppercase tracking-widest">Contact</Link>
             <Link href="/book" className="px-8 py-3 border border-black text-black text-xs font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all duration-300 active:scale-95">
@@ -86,6 +87,7 @@ export default function Home() {
             >
               <div className="px-6 py-8 flex flex-col space-y-6">
                 <Link href="/services" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">Services</Link>
+                <Link href="/gallery" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">Gallery</Link>
                 <Link href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">About</Link>
                 <Link href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">Contact</Link>
                 <Link href="/book" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-4 bg-black text-white text-center rounded-xl font-bold">
@@ -320,6 +322,7 @@ export default function Home() {
               <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-8">Quick Links</h4>
               <ul className="space-y-4 text-sm text-gray-500">
                 <li><Link href="/services" className="hover:text-black transition-colors">Services</Link></li>
+                <li><Link href="/gallery" className="hover:text-black transition-colors">Gallery</Link></li>
                 <li><Link href="#about" className="hover:text-black transition-colors">About</Link></li>
                 <li><Link href="/book" className="hover:text-black transition-colors">Book Now</Link></li>
               </ul>

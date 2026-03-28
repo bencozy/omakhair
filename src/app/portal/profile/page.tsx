@@ -9,7 +9,10 @@ import {
   Heart,
   Save,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Gift,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export default function ProfileSettings() {
@@ -24,7 +27,11 @@ export default function ProfileSettings() {
     phone: '',
     hairType: '',
     preferences: '',
+    referralCode: '',
+    credits: 0
   });
+
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,8 +43,7 @@ export default function ProfileSettings() {
         
         if (!user) throw new Error('Not logged in');
 
-        // Get customer data
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/customers/${user.id}`, { // This might need updating if backend has a better /me endpoint
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -52,7 +58,10 @@ export default function ProfileSettings() {
             phone: data.phone || '',
             hairType: data.hairType || '',
             preferences: data.preferences || '',
+            referralCode: data.referralCode || '',
+            credits: data.credits || 0
           });
+          localStorage.setItem('user', JSON.stringify(data));
         }
       } catch (err) {
         setError('Failed to load profile details.');
@@ -64,6 +73,12 @@ export default function ProfileSettings() {
     fetchProfile();
   }, []);
 
+  const handleCopy = () => {
+    if (!formData.referralCode) return;
+    navigator.clipboard.writeText(formData.referralCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -196,6 +211,42 @@ export default function ProfileSettings() {
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 ml-1">Hair Type</label>
+        <section className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 md:p-10 border shadow-xl space-y-8 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-2.5 bg-white/10 rounded-xl">
+                <Gift className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Refer a Friend</h2>
+                <p className="text-gray-400 text-sm">Earn $10 for every friend who completes their first booking.</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-400 uppercase tracking-wider font-bold">Credit Balance</p>
+              <p className="text-3xl font-serif font-bold text-yellow-400">${formData.credits}</p>
+            </div>
+          </div>
+
+          <div className="bg-white/5 rounded-2xl p-6 border border-white/10 space-y-4">
+            <p className="text-sm font-medium text-gray-300">Your Unique Referral Code</p>
+            <div className="flex items-center space-x-3">
+              <code className="flex-1 bg-black/40 px-6 py-4 rounded-xl text-2xl font-mono font-bold tracking-widest text-center border border-white/5">
+                {formData.referralCode || '-------'}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="p-4 bg-white text-black rounded-xl hover:bg-gray-200 transition-colors shadow-lg group"
+              >
+                {copied ? <Check className="w-6 h-6 text-green-600" /> : <Copy className="w-6 h-6" />}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 text-center italic">
+              Share this code with friends. They'll also get $10 off their first appointment!
+            </p>
+          </div>
+        </section>
               <input
                 type="text"
                 name="hairType"
