@@ -1,4 +1,5 @@
 'use client';
+import { Lock } from 'lucide-react';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -58,17 +59,16 @@ export default function ForgotPasswordPage() {
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto">
-              <Mail className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 font-serif">
-              Forgot Password?
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Enter your email address and we'll send you a link to reset your password.
-            </p>
+          <div className="w-16 h-16 bg-white border border-gray-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <Lock className="h-8 w-8 text-black" />
           </div>
-
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Forgot Password?
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Enter your email address and we&apos;ll send you a link to reset your password.
+          </p>
+        </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
@@ -117,7 +117,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading || !!message}
-              className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-black text-sm font-semibold rounded-md text-black bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {loading ? 'Sending link...' : 'Send Reset Link'}
             </button>

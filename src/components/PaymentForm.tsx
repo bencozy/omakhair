@@ -1,20 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   PaymentElement, 
   useStripe, 
   useElements 
 } from '@stripe/react-stripe-js';
-import { AlertCircle, CreditCard } from 'lucide-react';
+import { AlertCircle, CreditCard, Lock, ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface PaymentFormProps {
   bookingId: string;
   onSuccess: () => void;
-  onError: (error: string) => void;
+  onError?: (error: string) => void;
+  amount: number;
 }
 
-export function PaymentForm({ bookingId, onSuccess, onError }: PaymentFormProps) {
+export function PaymentForm({ bookingId, onSuccess, onError, amount }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -23,9 +25,7 @@ export function PaymentForm({ bookingId, onSuccess, onError }: PaymentFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
-      return;
-    }
+    if (!stripe || !elements) return;
 
     setProcessing(true);
     setErrorMessage('');
@@ -48,66 +48,83 @@ export function PaymentForm({ bookingId, onSuccess, onError }: PaymentFormProps)
 
       if (error) {
         setErrorMessage(error.message || 'Payment failed');
-        onError(error.message || 'Payment failed');
+        onError?.(error.message || 'Payment failed');
         setProcessing(false);
       } else {
         onSuccess();
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'An unexpected error occurred');
-      onError(err.message || 'An unexpected error occurred');
+      onError?.(err.message || 'An unexpected error occurred');
       setProcessing(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <CreditCard className="w-5 h-5 text-gray-700" />
-          <h3 className="text-lg font-semibold text-gray-900">Payment Details</h3>
+    <form onSubmit={handleSubmit} className="space-y-10">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between pb-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-nude-peach-dark" />
+            <h3 className="text-xs font-bold uppercase tracking-widest text-black">Secure Payment</h3>
+          </div>
+          <div className="flex gap-2">
+            <div className="w-8 h-5 bg-gray-100 rounded" />
+            <div className="w-8 h-5 bg-gray-100 rounded" />
+            <div className="w-8 h-5 bg-gray-100 rounded" />
+          </div>
         </div>
         
-        <PaymentElement 
-          options={{
-            layout: 'tabs',
-          }}
-        />
+        <div className="payment-element-container">
+          <PaymentElement 
+            options={{
+              layout: 'accordion',
+              theme: 'stripe',
+              variables: {
+                colorPrimary: '#000000',
+                colorBackground: '#ffffff',
+                colorText: '#000000',
+                colorDanger: '#df1b41',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                spacingUnit: '5px',
+                borderRadius: '16px',
+              },
+            }}
+          />
+        </div>
       </div>
 
       {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 text-red-600 px-6 py-4 rounded-2xl flex items-start gap-3 text-sm"
+        >
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-medium">Payment Error</p>
-            <p className="text-sm mt-1">{errorMessage}</p>
-          </div>
-        </div>
+          <p>{errorMessage}</p>
+        </motion.div>
       )}
 
-      <button
-        type="submit"
-        disabled={!stripe || processing}
-        className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-      >
-        {processing ? (
-          <>
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            Processing Payment...
-          </>
-        ) : (
-          <>
-            <CreditCard className="w-5 h-5" />
-            Pay $30.00
-          </>
-        )}
-      </button>
-
-      <div className="text-center text-sm text-gray-600">
-        <p>Your payment is secured by Stripe</p>
-        <p className="mt-1">This is a non-refundable booking deposit</p>
+      <div className="space-y-6">
+        <button
+          disabled={processing || !stripe}
+          className="w-full py-5 bg-black text-white rounded-full font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 disabled:opacity-30 hover:bg-nude-peach-dark hover:text-black transition-all duration-300"
+        >
+          {processing ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <Lock className="w-4 h-4" />
+              Pay ${amount} & Confirm
+            </>
+          )}
+        </button>
+        
+        <p className="text-[10px] text-center text-gray-400 font-medium uppercase tracking-widest flex items-center justify-center gap-2">
+          <ShieldCheck className="w-3 h-3" />
+          Encryption Secured by Stripe
+        </p>
       </div>
     </form>
   );
 }
-

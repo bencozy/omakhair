@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard, Search } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard, Search, ChevronRight, Check } from 'lucide-react';
 import Calendar from 'react-calendar';
 import { format, addDays, startOfToday } from 'date-fns';
 import { loadStripe } from '@stripe/stripe-js';
@@ -20,6 +20,7 @@ import {
   validateEmail,
   validatePhone
 } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -51,775 +52,511 @@ function BookPageContent() {
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Fetch services on mount
+  // Fetch services and initial data
   useEffect(() => {
-    async function fetchServices() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/services');
-        const data = await response.json();
-        if (data.services) {
-          setServices(data.services);
+        const [servicesRes, blockedRes, bookingsRes] = await Promise.all([
+          fetch('/api/services'),
+          fetch('/api/blocked-dates'),
+          fetch('/api/bookings')
+        ]);
+        
+        const servicesData = await servicesRes.json();
+        const blockedData = await blockedRes.json();
+        const bookingsData = await bookingsRes.json();
+
+        if (servicesData.services) setServices(servicesData.services);
+        if (blockedData.blockedDates) setBlockedDates(blockedData.blockedDates.map((d: any) => new Date(d.date)));
+        if (bookingsData.bookings) setExistingBookings(bookingsData.bookings);
+
+        // Pre-select service from URL if any
+        const serviceId = searchParams.get('service');
+        if (serviceId) {
+          setFormData(prev => ({ ...prev, selectedServices: [serviceId] }));
         }
       } catch (error) {
-        console.error('Error fetching services:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchServices();
-  }, []);
+    fetchData();
+  }, [searchParams]);
+
+  // Update time slots when date or services change
+  useEffect(() => {
+    if (formData.appointmentDate && formData.selectedServices.length > 0) {
+      setLoadingSlots(true);
+      const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
+      const slots = generateTimeSlots(formData.appointmentDate, totalDuration, existingBookings);
+      setAvailableSlots(slots);
+      setLoadingSlots(false);
+    }
+  }, [formData.appointmentDate, formData.selectedServices, formData.selectedAddons, existingBookings, services]);
 
   const filteredServices = useMemo(() => {
     return services.filter(service => {
       const query = searchQuery.toLowerCase();
-      const matchesService = 
-        service.name.toLowerCase().includes(query) ||
-        service.description.toLowerCase().includes(query) ||
-        service.category.toLowerCase().includes(query);
-      
-      const matchesAddons = service.addons?.some(addon => 
-        addon.name.toLowerCase().includes(query) ||
-        addon.description.toLowerCase().includes(query)
-      ) || false;
-      
-      return matchesService || matchesAddons;
+      return service.name.toLowerCase().includes(query) || 
+             service.category.toLowerCase().includes(query) ||
+             service.description.toLowerCase().includes(query);
     });
   }, [services, searchQuery]);
 
-  const selectedServices = useMemo(() => {
-    return services.filter(service => formData.selectedServices.includes(service.id));
-  }, [services, formData.selectedServices]);
-
-  const totalPrice = useMemo(() => {
-    return calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
-  }, [formData.selectedServices, formData.selectedAddons, services]);
-
-  const totalDuration = useMemo(() => {
-    return calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
-  }, [formData.selectedServices, formData.selectedAddons, services]);
-
-  // Load state from URL on mount
-  useEffect(() => {
-    const stepParam = searchParams.get('step');
-    const servicesParam = searchParams.get('services');
-    const addonsParam = searchParams.get('addons');
-    const directServiceParam = searchParams.get('service');
-    
-    if (stepParam) {
-      const stepNum = parseInt(stepParam, 10);
-      if (stepNum >= 1 && stepNum <= 4) {
-        setStep(stepNum);
-      }
-    }
-    
-    if (directServiceParam) {
-      setFormData(prev => ({
-        ...prev,
-        selectedServices: [directServiceParam]
-      }));
-      setStep(1);
-    } else if (servicesParam) {
-      try {
-        const selectedServices = JSON.parse(decodeURIComponent(servicesParam));
-        const selectedAddons = addonsParam ? JSON.parse(decodeURIComponent(addonsParam)) : {};
-        
-        setFormData(prev => ({
-          ...prev,
-          selectedServices,
-          selectedAddons
-        }));
-      } catch (error) {
-        console.error('Failed to parse URL params:', error);
-      }
-    } else {
-      // Fallback to localStorage if no URL params
-      const savedSelections = localStorage.getItem('bookingSelections');
-      if (savedSelections) {
-        try {
-          const parsed = JSON.parse(savedSelections);
-          setFormData(prev => ({
-            ...prev,
-            selectedServices: parsed.selectedServices || [],
-            selectedAddons: parsed.selectedAddons || {}
-          }));
-        } catch (error) {
-          console.error('Failed to load saved selections:', error);
-        }
-      }
-    }
-  }, [searchParams]);
-
-  // Update URL when step or selections change
-  useEffect(() => {
-    const params = new URLSearchParams();
-    
-    // Don't add URL params on step 1 or step 5 (success page)
-    if (step > 1 && step < 5) {
-      params.set('step', step.toString());
-      
-      if (formData.selectedServices.length > 0) {
-        params.set('services', encodeURIComponent(JSON.stringify(formData.selectedServices)));
-        
-        if (Object.keys(formData.selectedAddons).length > 0) {
-          params.set('addons', encodeURIComponent(JSON.stringify(formData.selectedAddons)));
-        }
-        
-        // Also save to localStorage as backup
-        localStorage.setItem('bookingSelections', JSON.stringify({
-          selectedServices: formData.selectedServices,
-          selectedAddons: formData.selectedAddons
-        }));
-      }
-    }
-    
-    const newUrl = params.toString() ? `?${params.toString()}` : '/book';
-    router.replace(newUrl, { scroll: false });
-  }, [step, formData.selectedServices, formData.selectedAddons, router]);
-
-  // Load existing bookings from API
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const response = await fetch('/api/bookings');
-        const data = await response.json();
-        if (data.bookings) {
-          setExistingBookings(data.bookings);
-        }
-      } catch (error) {
-        console.error('Failed to fetch bookings:', error);
-      }
-    };
-    
-    const fetchBlockedDates = async () => {
-      try {
-        const response = await fetch('/api/blocked-dates');
-        const data = await response.json();
-        if (data.blockedDates) {
-          setBlockedDates(data.blockedDates.map((d: any) => new Date(d.date)));
-        }
-      } catch (error) {
-        console.error('Failed to fetch blocked dates:', error);
-      }
-    };
-
-    fetchBookings();
-    fetchBlockedDates();
-  }, []);
-
-  // Update available slots when date or selections change
-  useEffect(() => {
-    if (formData.appointmentDate && formData.selectedServices.length > 0) {
-      setLoadingSlots(true);
-      
-      // Artificial delay for better UX
-      const timer = setTimeout(() => {
-        const slots = generateTimeSlots(
-          formData.appointmentDate, 
-          existingBookings, 
-          formData.selectedServices, 
-          formData.selectedAddons,
-          services
-        );
-        setAvailableSlots(slots);
-        setLoadingSlots(false);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [formData.appointmentDate, formData.selectedServices, formData.selectedAddons, existingBookings, services]);
-
-  const handleServiceSelect = (serviceId: string) => {
+  const handleServiceToggle = (serviceId: string) => {
     setFormData(prev => {
       const isSelected = prev.selectedServices.includes(serviceId);
-      const newSelectedServices = isSelected
-        ? prev.selectedServices.filter(id => id !== serviceId)
-        : [...prev.selectedServices, serviceId];
-      
-      // Clear addons for removed service
-      const newSelectedAddons = { ...prev.selectedAddons };
       if (isSelected) {
-        delete newSelectedAddons[serviceId];
+        const newSelected = prev.selectedServices.filter(id => id !== serviceId);
+        const newAddons = { ...prev.selectedAddons };
+        delete newAddons[serviceId];
+        return { ...prev, selectedServices: newSelected, selectedAddons: newAddons };
+      } else {
+        return { ...prev, selectedServices: [...prev.selectedServices, serviceId] };
       }
-      
-      return {
-        ...prev,
-        selectedServices: newSelectedServices,
-        selectedAddons: newSelectedAddons
-      };
     });
+    if (errors.services) setErrors(prev => ({ ...prev, services: '' }));
   };
 
-  const handleAddonSelect = (serviceId: string, addonId: string) => {
+  const handleAddonToggle = (serviceId: string, addonId: string) => {
     setFormData(prev => {
-      const serviceAddons = prev.selectedAddons[serviceId] || [];
-      const isSelected = serviceAddons.includes(addonId);
-      
-      const newServiceAddons = isSelected
-        ? serviceAddons.filter(id => id !== addonId)
-        : [...serviceAddons, addonId];
+      const currentAddons = prev.selectedAddons[serviceId] || [];
+      const isSelected = currentAddons.includes(addonId);
+      const newAddons = isSelected
+        ? currentAddons.filter(id => id !== addonId)
+        : [...currentAddons, addonId];
       
       return {
         ...prev,
         selectedAddons: {
           ...prev.selectedAddons,
-          [serviceId]: newServiceAddons
+          [serviceId]: newAddons
         }
       };
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when typing
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateStep1 = () => {
-    if (formData.selectedServices.length === 0) {
-      setBookingError('Please select at least one service');
-      return false;
-    }
-    setBookingError('');
-    return true;
-  };
-
-  const validateStep2 = () => {
+  const validateStep = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.firstName) newErrors.firstName = 'First name is required';
-    if (!formData.lastName) newErrors.lastName = 'Last name is required';
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Invalid email address';
-    }
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!validatePhone(formData.phone)) {
-      newErrors.phone = 'Invalid phone number';
-    }
     
+    if (step === 1) {
+      if (formData.selectedServices.length === 0) {
+        newErrors.services = 'Please select at least one service.';
+      }
+    } else if (step === 2) {
+      if (!formData.selectedTime) newErrors.time = 'Please select an appointment time.';
+      if (!formData.firstName.trim()) newErrors.firstName = 'First name is required.';
+      if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required.';
+      if (!validateEmail(formData.email)) newErrors.email = 'Please enter a valid email address.';
+      if (!validatePhone(formData.phone)) newErrors.phone = 'Please enter a valid phone number.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateStep3 = () => {
-    if (!formData.selectedTime) {
-      setBookingError('Please select an appointment time');
-      return false;
-    }
-    setBookingError('');
-    return true;
-  };
-
-  const nextStep = () => {
-    if (step === 1 && !validateStep1()) return;
-    if (step === 2 && !validateStep2()) return;
-    if (step === 3 && !validateStep3()) return;
+  const nextStep = async () => {
+    if (!validateStep()) return;
     
-    setStep(prev => prev + 1);
-    window.scrollTo(0, 0);
+    if (step === 2) {
+      try {
+        setLoading(true);
+        const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
+        
+        const response = await fetch('/api/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalAmount,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret);
+          setPaymentIntentId(data.paymentIntentId);
+          setStep(3);
+        } else {
+          setBookingError(data.error || 'Failed to initialize payment.');
+        }
+      } catch (error) {
+        setBookingError('An error occurred. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setStep(prev => prev + 1);
+    }
   };
 
   const prevStep = () => {
     setStep(prev => prev - 1);
-    window.scrollTo(0, 0);
+    setBookingError('');
   };
 
-  const createInitialBooking = async () => {
-    setLoading(true);
-    setBookingError('');
-    
+  const handlePaymentSuccess = async () => {
     try {
+      setLoading(true);
+      const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
+      const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
+
+      const bookingData = {
+        ...formData,
+        totalAmount,
+        totalDuration,
+        paymentStatus: 'paid',
+        paymentIntentId,
+        status: 'confirmed',
+        createdAt: new Date().toISOString()
+      };
+
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          totalPrice,
-          totalDuration,
-          status: 'pending'
-        })
+        body: JSON.stringify(bookingData),
       });
-      
-      const result = await response.json();
-      
-      if (!response.ok) throw new Error(result.error || 'Failed to initialize booking');
-      
-      setPendingBookingId(result.booking._id);
-      
-      // Create Payment Intent
-      const paymentResponse = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: totalPrice * 100, // Stripe expects cents
-          bookingId: result.booking._id,
-          customerEmail: formData.email
-        })
-      });
-      
-      const paymentData = await paymentResponse.json();
-      if (!paymentResponse.ok) throw new Error(paymentData.error || 'Failed to initialize payment');
-      
-      setClientSecret(paymentData.clientSecret);
-      setPaymentIntentId(paymentData.paymentIntentId);
-      setStep(4);
-    } catch (error: any) {
-      console.error('Booking error:', error);
-      setBookingError(error.message || 'Something went wrong. Please try again.');
+
+      if (response.ok) {
+        const selectedServiceNames = formData.selectedServices
+          .map(id => services.find(s => s.id === id)?.name)
+          .join(', ');
+        
+        const queryParams = new URLSearchParams({
+          firstName: formData.firstName,
+          date: format(formData.appointmentDate, 'MMMM d, yyyy'),
+          time: formData.selectedTime,
+          services: selectedServiceNames,
+          total: formatCurrency(totalAmount),
+          email: formData.email
+        });
+        
+        router.push(`/book/success?${queryParams.toString()}`);
+      } else {
+        const errorData = await response.json();
+        setBookingError(errorData.error || 'Failed to save booking. Please contact support.');
+      }
+    } catch (error) {
+      setBookingError('An error occurred while saving your booking.');
     } finally {
       setLoading(false);
     }
   };
 
-  const isDateBlocked = (date: Date) => {
-    return blockedDates.some(blockedDate => isSameDay(blockedDate, date));
-  };
+  const steps = [
+    { number: 1, title: 'Services', icon: <Search className="w-5 h-5" /> },
+    { number: 2, title: 'Details', icon: <CalendarIcon className="w-5 h-5" /> },
+    { number: 3, title: 'Payment', icon: <CreditCard className="w-5 h-5" /> }
+  ];
 
-  if (step === 5) {
+  if (loading && step === 1) {
     return (
-      <div className="max-w-xl mx-auto text-center py-20 px-4">
-        <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
-          <CheckCircle className="w-10 h-10" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin" />
+          <p className="mt-4 text-gray-500 font-bold uppercase tracking-widest text-xs">Loading Studio...</p>
         </div>
-        <h2 className="text-4xl font-serif font-bold mb-4">Booking Confirmed!</h2>
-        <p className="text-gray-400 mb-10 text-lg">
-          Thank you for choosing LaidbyOma, {formData.firstName}! We've sent a confirmation email to {formData.email} with your appointment details.
-        </p>
-        <div className="bg-zinc-900 rounded-3xl p-8 mb-10 text-left border border-gray-800">
-          <h3 className="font-bold text-xl mb-4 border-b border-gray-800 pb-4">Appointment Summary</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-gray-500">Date</span>
-              <span className="font-medium">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Time</span>
-              <span className="font-medium">{formData.selectedTime}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Services</span>
-              <div className="text-right">
-                {selectedServices.map(s => <div key={s.id} className="font-medium">{s.name}</div>)}
-              </div>
-            </div>
-            <div className="flex justify-between border-t border-gray-800 pt-4">
-              <span className="font-bold">Total Paid</span>
-              <span className="font-bold text-orange-500">{formatCurrency(totalPrice)}</span>
-            </div>
-          </div>
-        </div>
-        <Link href="/" className="inline-block px-8 py-4 bg-white text-black rounded-xl font-bold hover:bg-gray-100 transition-all">
-          Return Home
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Progress Bar */}
-      <div className="mb-12">
-        <div className="flex justify-between items-center mb-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                step === i ? 'bg-orange-500 text-white scale-110 shadow-lg shadow-orange-500/20' : 
-                step > i ? 'bg-green-500 text-white' : 'bg-zinc-800 text-gray-500'
-              }`}>
-                {step > i ? <CheckCircle className="w-6 h-6" /> : i}
-              </div>
-              <span className={`text-[10px] uppercase tracking-widest mt-2 font-bold ${step === i ? 'text-orange-500' : 'text-gray-500'}`}>
-                {i === 1 ? 'Services' : i === 2 ? 'Details' : i === 3 ? 'Time' : 'Payment'}
-              </span>
-            </div>
-          ))}
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-gray-100">
+      {/* Navbar */}
+      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group text-xs font-bold uppercase tracking-widest">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span>Cancel</span>
+          </Link>
+          <div className="flex items-center">
+            <span className="text-xl font-serif font-bold tracking-tight">
+              Laid<span className="text-black">byOma</span>
+            </span>
+          </div>
+          <div className="w-20" /> {/* Spacer */}
         </div>
-        <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-orange-500 transition-all duration-500 ease-out"
-            style={{ width: `${((step - 1) / 3) * 100}%` }}
-          ></div>
-        </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Main Content */}
-        <div className="lg:col-span-2">
-          {step === 1 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div>
-                <h2 className="text-3xl font-serif font-bold mb-2">Select Services</h2>
-                <p className="text-gray-400">Choose one or more services to book your transformation.</p>
-              </div>
-
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search for services or addons..."
-                  className="w-full bg-zinc-900 border border-gray-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              {loading ? (
-                <div className="space-y-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-32 bg-zinc-900 animate-pulse rounded-2xl"></div>
-                  ))}
+      <main className="pt-32 pb-20">
+        <div className="max-w-4xl mx-auto px-6">
+          {/* Progress Steps */}
+          <div className="mb-20">
+            <div className="flex items-center justify-between relative">
+              <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gray-100 -translate-y-1/2 -z-10" />
+              {steps.map((s, i) => (
+                <div key={s.number} className="flex flex-col items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+                    step >= s.number ? 'bg-white border-black text-black' : 'bg-white border-gray-100 text-gray-300'
+                  }`}>
+                    {step > s.number ? <Check className="w-5 h-5" /> : s.icon}
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${
+                    step >= s.number ? 'text-black' : 'text-gray-300'
+                  }`}>{s.title}</span>
                 </div>
-              ) : (
-                <ServiceList 
+              ))}
+            </div>
+          </div>
+
+          {/* Content Sections */}
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-10"
+              >
+                <div className="text-center">
+                  <h2 className="text-4xl font-serif font-bold mb-4">Choose Your Service.</h2>
+                  <p className="text-gray-500">Select the treatments you&apos;d like to receive today.</p>
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search services..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-16 pr-6 py-5 bg-gray-50/50 border border-gray-100 rounded-full text-sm focus:bg-white focus:border-black transition-all outline-none"
+                  />
+                </div>
+
+                {errors.services && (
+                  <div className="p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-sm">
+                    <AlertCircle className="w-5 h-5" />
+                    {errors.services}
+                  </div>
+                )}
+
+                <ServiceList
                   services={filteredServices}
                   selectedServices={formData.selectedServices}
                   selectedAddons={formData.selectedAddons}
-                  onServiceSelect={handleServiceSelect}
-                  onAddonSelect={handleAddonSelect}
+                  onServiceToggle={handleServiceToggle}
+                  onAddonToggle={handleAddonToggle}
                 />
-              )}
-            </div>
-          )}
 
-          {step === 2 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div>
-                <h2 className="text-3xl font-serif font-bold mb-2">Your Details</h2>
-                <p className="text-gray-400">Please provide your contact information for the booking.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-400 ml-1">First Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                    <input
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      className={`w-full bg-zinc-900 border ${errors.firstName ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
-                      placeholder="Jane"
-                    />
-                  </div>
-                  {errors.firstName && <p className="text-red-500 text-xs mt-1 ml-1">{errors.firstName}</p>}
+                <div className="pt-10 flex justify-center">
+                  <button
+                    onClick={nextStep}
+                    className="px-12 py-5 bg-black text-white rounded-full font-bold uppercase tracking-widest text-xs disabled:opacity-30 flex items-center gap-3 group"
+                    disabled={formData.selectedServices.length === 0}
+                  >
+                    Continue to Details
+                    <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-400 ml-1">Last Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                    <input
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      className={`w-full bg-zinc-900 border ${errors.lastName ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
-                      placeholder="Doe"
-                    />
-                  </div>
-                  {errors.lastName && <p className="text-red-500 text-xs mt-1 ml-1">{errors.lastName}</p>}
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-400 ml-1">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                    <input
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className={`w-full bg-zinc-900 border ${errors.email ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
-                      placeholder="jane@example.com"
-                    />
-                  </div>
-                  {errors.email && <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>}
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-400 ml-1">Phone Number</label>
-                  <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                    <input
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className={`w-full bg-zinc-900 border ${errors.phone ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
-                      placeholder="(555) 000-0000"
-                    />
-                  </div>
-                  {errors.phone && <p className="text-red-500 text-xs mt-1 ml-1">{errors.phone}</p>}
-                </div>
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-sm font-medium text-gray-400 ml-1">Special Notes (Optional)</label>
-                  <div className="relative">
-                    <MessageSquare className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
-                    <textarea
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      rows={4}
-                      className="w-full bg-zinc-900 border border-gray-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all resize-none"
-                      placeholder="Tell us about any special requirements or preferences..."
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
 
-          {step === 3 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div>
-                <h2 className="text-3xl font-serif font-bold mb-2">Choose Date & Time</h2>
-                <p className="text-gray-400">Select your preferred appointment slot.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                <div className="bg-zinc-900 p-6 rounded-3xl border border-gray-800">
-                  <Calendar
-                    onChange={(val) => setFormData(prev => ({ ...prev, appointmentDate: val as Date, selectedTime: '' }))}
-                    value={formData.appointmentDate}
-                    minDate={startOfToday()}
-                    maxDate={addDays(startOfToday(), 60)}
-                    tileDisabled={({ date }) => isDateBlocked(date)}
-                    className="w-full bg-transparent border-none text-white"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-bold flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-orange-500" />
-                    Available Times for {format(formData.appointmentDate, 'MMM d')}
-                  </h3>
-                  
-                  {loadingSlots ? (
-                    <div className="grid grid-cols-3 gap-3">
-                      {Array.from({ length: 9 }).map((_, i) => (
-                        <div key={i} className="h-12 bg-zinc-900 animate-pulse rounded-xl"></div>
-                      ))}
-                    </div>
-                  ) : availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-3">
-                      {availableSlots.map((slot) => (
-                        <button
-                          key={slot.time}
-                          disabled={!slot.available}
-                          onClick={() => setFormData(prev => ({ ...prev, selectedTime: slot.time }))}
-                          className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                            formData.selectedTime === slot.time
-                              ? 'bg-orange-500 text-white'
-                              : slot.available
-                              ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                              : 'bg-zinc-900/50 text-gray-700 cursor-not-allowed opacity-50'
-                          }`}
-                        >
-                          {slot.time}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center bg-zinc-900/50 rounded-2xl border border-dashed border-gray-800">
-                      <AlertCircle className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-                      <p className="text-gray-500">No available slots for this date.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && clientSecret && (
-            <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-              <div>
-                <h2 className="text-3xl font-serif font-bold mb-2">Secure Payment</h2>
-                <p className="text-gray-400">Complete your booking with a secure payment.</p>
-              </div>
-
-              <div className="bg-zinc-900 p-8 rounded-3xl border border-gray-800">
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <PaymentForm 
-                    amount={totalPrice} 
-                    bookingId={pendingBookingId}
-                    paymentIntentId={paymentIntentId}
-                    onSuccess={() => setStep(5)}
-                    onError={setBookingError}
-                  />
-                </Elements>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
-                <CreditCard className="w-6 h-6 text-orange-500" />
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Your payment is processed securely via Stripe. We do not store your card details. A deposit is required to secure your appointment.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {bookingError && (
-            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 animate-in shake duration-500">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <p className="text-sm font-medium">{bookingError}</p>
-            </div>
-          )}
-
-          {/* Navigation Buttons */}
-          <div className="mt-12 flex justify-between items-center">
-            {step > 1 && step < 4 && (
-              <button
-                onClick={prevStep}
-                className="flex items-center gap-2 text-gray-400 hover:text-white font-bold transition-all px-6 py-3"
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="grid lg:grid-cols-5 gap-16"
               >
-                <ArrowLeft className="w-5 h-5" />
-                Back
-              </button>
-            ) || <div></div>}
-            
-            {step < 3 ? (
-              <button
-                onClick={nextStep}
-                className="px-10 py-4 bg-white text-black rounded-2xl font-bold hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105 ml-auto flex items-center gap-2"
-              >
-                Continue
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            ) : step === 3 ? (
-              <button
-                disabled={loading}
-                onClick={createInitialBooking}
-                className="px-10 py-4 bg-orange-500 text-white rounded-2xl font-bold hover:bg-orange-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100 ml-auto flex items-center gap-2"
-              >
-                {loading ? 'Initializing...' : 'Proceed to Payment'}
-                {!loading && <CreditCard className="w-5 h-5" />}
-              </button>
-            ) : null}
-          </div>
-        </div>
+                <div className="lg:col-span-3 space-y-12">
+                  <section>
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-400 flex items-center gap-3">
+                      <span className="w-8 h-[1px] bg-gray-200" />
+                      Select Date & Time
+                    </h3>
+                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm overflow-hidden">
+                      <Calendar
+                        onChange={(d) => setFormData(prev => ({ ...prev, appointmentDate: d as Date }))}
+                        value={formData.appointmentDate}
+                        minDate={startOfToday()}
+                        maxDate={addDays(new Date(), 60)}
+                        className="w-full border-none font-sans"
+                        tileDisabled={({ date }) => blockedDates.some(bd => bd.toDateString() === date.toDateString())}
+                      />
+                    </div>
 
-        {/* Sidebar Summary */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-32 space-y-6">
-            <div className="bg-zinc-900 rounded-3xl border border-gray-800 overflow-hidden">
-              <div className="p-6 bg-orange-500/10 border-b border-gray-800">
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-orange-500" />
-                  Booking Summary
-                </h3>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                {selectedServices.length > 0 ? (
-                  <div className="space-y-4">
-                    {selectedServices.map(service => (
-                      <div key={service.id} className="group">
-                        <div className="flex justify-between items-start mb-1">
-                          <span className="font-bold text-sm group-hover:text-orange-500 transition-colors">{service.name}</span>
-                          <span className="text-sm font-medium">{formatCurrency(service.price)}</span>
+                    <div className="mt-8 grid grid-cols-3 sm:grid-cols-4 gap-3">
+                      {loadingSlots ? (
+                        Array(8).fill(0).map((_, i) => (
+                          <div key={i} className="h-12 bg-gray-50 rounded-xl animate-pulse" />
+                        ))
+                      ) : availableSlots.length > 0 ? (
+                        availableSlots.map((slot) => (
+                          <button
+                            key={slot.time}
+                            onClick={() => setFormData(prev => ({ ...prev, selectedTime: slot.time }))}
+                            className={`py-4 rounded-xl text-xs font-bold transition-all border ${
+                              formData.selectedTime === slot.time
+                                ? 'bg-black text-white border-black shadow-lg scale-95'
+                                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border-gray-100'
+                            }`}
+                          >
+                            {slot.time}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="col-span-full py-10 text-center text-gray-400 text-sm italic bg-gray-50 rounded-2xl">
+                          No available times for this date.
                         </div>
-                        {formData.selectedAddons[service.id]?.map(addonId => {
-                          const addon = service.addons?.find(a => a.id === addonId);
-                          return addon ? (
-                            <div key={addonId} className="flex justify-between items-center text-xs text-gray-500 pl-3 border-l border-gray-800 ml-1 mt-1">
-                              <span>+ {addon.name}</span>
-                              <span>{formatCurrency(addon.price)}</span>
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm italic text-center py-4">No services selected yet</p>
-                )}
-
-                <div className="pt-6 border-t border-gray-800 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Duration</span>
-                    <span className="font-medium text-gray-300">{formatDuration(totalDuration)}</span>
-                  </div>
-                  {formData.selectedTime && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Appointment</span>
-                      <span className="font-medium text-gray-300">{format(formData.appointmentDate, 'MMM d')} @ {formData.selectedTime}</span>
+                      )}
                     </div>
-                  )}
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="font-bold text-lg">Total</span>
-                    <span className="text-2xl font-bold text-orange-500">{formatCurrency(totalPrice)}</span>
+                  </section>
+
+                  <section>
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-400 flex items-center gap-3">
+                      <span className="w-8 h-[1px] bg-gray-200" />
+                      Personal Information
+                    </h3>
+                    <div className="grid sm:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">First Name</label>
+                        <input
+                          type="text"
+                          placeholder="Jane"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Last Name</label>
+                        <input
+                          type="text"
+                          placeholder="Doe"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Email Address</label>
+                        <input
+                          type="email"
+                          placeholder="jane@example.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Phone Number</label>
+                        <input
+                          type="tel"
+                          placeholder="(555) 000-0000"
+                          value={formData.phone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Special Instructions (Optional)</label>
+                        <textarea
+                          placeholder="Any details you'd like us to know..."
+                          value={formData.notes}
+                          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none resize-none"
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  <div className="flex items-center justify-between pt-10">
+                    <button onClick={prevStep} className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-black">Go Back</button>
+                    <button
+                      onClick={nextStep}
+                      className="px-12 py-5 bg-black text-white rounded-full font-bold uppercase tracking-widest text-xs disabled:opacity-30 flex items-center gap-3 group"
+                      disabled={loading}
+                    >
+                      {loading ? 'Initializing...' : 'Confirm & Pay'}
+                      <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              <div className="p-4 bg-zinc-900/50 flex items-center gap-3 border-t border-gray-800">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-[10px] uppercase tracking-widest font-bold text-gray-500">Live Availability Enabled</span>
-              </div>
-            </div>
+                <div className="lg:col-span-2">
+                  <div className="sticky top-32">
+                    <div className="bg-gray-50 rounded-3xl p-10 border border-gray-100 h-fit">
+                      <h4 className="text-xs font-bold uppercase tracking-widest mb-10 pb-4 border-b border-gray-200">Booking Summary</h4>
+                      <div className="space-y-8 mb-10">
+                        {formData.selectedServices.map(sid => {
+                          const s = services.find(x => x.id === sid);
+                          return (
+                            <div key={sid}>
+                              <div className="text-sm font-bold text-black mb-1">{s?.name}</div>
+                              <div className="text-xs text-gray-400 uppercase tracking-widest">{s?.category}</div>
+                            </div>
+                          );
+                        })}
+                        {formData.appointmentDate && formData.selectedTime && (
+                          <div className="pt-8 border-t border-gray-200">
+                            <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Appointment</div>
+                            <div className="text-sm font-bold text-black">{format(formData.appointmentDate, 'MMMM d, yyyy')}</div>
+                            <div className="text-sm font-bold text-black mt-1">{formData.selectedTime}</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="pt-8 border-t border-gray-200 flex justify-between items-center">
+                        <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Total Deposit</span>
+                        <span className="text-2xl font-serif font-bold text-black">
+                          {formatCurrency(calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-            <div className="p-6 rounded-3xl bg-zinc-900/50 border border-gray-800 space-y-4">
-              <h4 className="font-bold text-sm flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-orange-500" />
-                Booking Policy
-              </h4>
-              <ul className="space-y-2">
-                <li className="text-[11px] text-gray-500 leading-relaxed">• A non-refundable deposit is required.</li>
-                <li className="text-[11px] text-gray-500 leading-relaxed">• Rescheduling is allowed up to 24h before.</li>
-                <li className="text-[11px] text-gray-500 leading-relaxed">• Please arrive with clean, product-free hair.</li>
-              </ul>
-            </div>
-          </div>
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-10"
+              >
+                <div className="text-center">
+                  <h2 className="text-4xl font-serif font-bold mb-4">Complete Payment.</h2>
+                  <p className="text-gray-500">Secure your appointment with a deposit.</p>
+                </div>
+
+                <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+                  <div className="max-w-md mx-auto">
+                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                      <PaymentForm 
+                        onSuccess={handlePaymentSuccess} 
+                        amount={calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services)}
+                      />
+                    </Elements>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
-const ChevronRight = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-  </svg>
-);
-
 export default function BookPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <Link 
-              href="/" 
-              className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back to Home</span>
-            </Link>
-            <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold tracking-tight">
-                Laid<span className="text-orange-500">byOma</span>
-              </span>
-            </Link>
-            <div className="w-24"></div> {/* Spacer for symmetry */}
-          </div>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin" />
+          <p className="mt-4 text-gray-500 font-bold uppercase tracking-widest text-xs">Loading Studio...</p>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <Suspense fallback={
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-500 font-medium animate-pulse">Loading booking experience...</p>
-          </div>
-        }>
-          <BookPageContent />
-        </Suspense>
-      </main>
-    </div>
+      </div>
+    }>
+      <BookPageContent />
+    </Suspense>
   );
 }

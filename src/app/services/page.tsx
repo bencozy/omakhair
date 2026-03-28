@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Clock, DollarSign, Calendar, CheckCircle, Award, Users, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Clock, DollarSign, Calendar, CheckCircle2, Award, Users, ChevronRight, Star, Crown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Service } from '@/types';
+import { motion } from "framer-motion";
+import { ServiceCard } from "@/components/ServiceCard";
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -26,144 +28,133 @@ export default function ServicesPage() {
     fetchServices();
   }, []);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-nude-peach">
       {/* Header */}
-      <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <Link 
-              href="/" 
-              className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back</span>
-            </Link>
-            <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold tracking-tight">
-                Laid<span className="text-orange-500">byOma</span>
-              </span>
-            </Link>
-            <Link
-              href="/book"
-              className="px-6 py-2.5 bg-white text-black rounded-lg font-semibold hover:bg-gray-100 transition-all hover:scale-105 text-sm"
-            >
-              Book Now
-            </Link>
-          </div>
+      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link 
+            href="/" 
+            className="flex items-center gap-2 group text-xs font-bold uppercase tracking-widest"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span>Back Home</span>
+          </Link>
+          <Link href="/" className="flex items-center">
+            <span className="text-2xl font-serif font-bold tracking-tight">
+              Laid<span className="text-black">byOma</span>
+            </span>
+          </Link>
+          <Link
+            href="/book"
+            className="px-8 py-3 border border-black text-black text-xs font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all duration-300"
+          >
+            Book Now
+          </Link>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white py-20 sm:py-28 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }}></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold mb-6 tracking-tight">
-              Our <span className="text-orange-500 italic">Signature</span> Services
-            </h2>
-            <p className="text-xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto">
-              Professional hair styling and braiding excellence. Each service is tailored to enhance your natural beauty.
-            </p>
+      <main className="pt-20">
+        {/* Hero Section */}
+        <section className="relative py-32 bg-white overflow-hidden">
+          <div className="absolute top-0 right-0 w-1/4 h-full bg-gray-50/50 -skew-x-12 translate-x-1/2 pointer-events-none" />
+          
+          <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-gray-400 mb-6 block">Our Craft</span>
+              <h1 className="text-6xl lg:text-7xl font-serif font-bold mb-8">
+                Signature <br />
+                <span className="italic">Services.</span>
+              </h1>
+              <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+                Elevate your beauty with our professional hair styling and installation excellence. Each service is tailored to your unique style.
+              </p>
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Grid */}
-      <section className="py-12 bg-zinc-900/50 border-y border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="flex flex-col items-center">
-              <Award className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-bold mb-2">Premium Quality</h3>
-              <p className="text-gray-500 text-sm">Expertly crafted styles using only the best techniques and products.</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <Users className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-bold mb-2">Expert Stylists</h3>
-              <p className="text-gray-500 text-sm">Dedicated professionals committed to bringing your hair goals to life.</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <Clock className="w-8 h-8 text-orange-500 mb-4" />
-              <h3 className="text-lg font-bold mb-2">Efficient Service</h3>
-              <p className="text-gray-500 text-sm">Respecting your time while never compromising on attention to detail.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Content */}
-      <section className="py-24 sm:py-32 bg-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+        {/* Services Grid */}
+        <section className="py-32">
+          <div className="max-w-7xl mx-auto px-6">
             {loading ? (
-              Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="h-64 bg-zinc-900/50 rounded-2xl animate-pulse"></div>
-              ))
+              <div className="grid md:grid-cols-3 gap-8">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="aspect-[3/4] bg-gray-50 rounded-2xl animate-pulse" />
+                ))}
+              </div>
             ) : (
-              services.map((service) => (
-                <div 
-                  key={service.id} 
-                  className="group relative bg-zinc-900/40 rounded-3xl p-8 border border-gray-800/60 hover:border-orange-500/30 transition-all duration-300 flex flex-col h-full"
-                >
-                  <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-2xl font-bold group-hover:text-orange-500 transition-colors">{service.name}</h3>
-                    {service.popular && (
-                      <span className="bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">Popular</span>
-                    )}
-                  </div>
-                  
-                  <p className="text-gray-400 text-sm mb-8 flex-grow leading-relaxed">
-                    {service.description}
-                  </p>
-                  
-                  <div className="space-y-4 pt-6 border-t border-gray-800/80">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-gray-500 text-sm">
-                        <Clock className="w-4 h-4" />
-                        <span>{service.duration} mins</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-white font-bold text-lg">
-                        <DollarSign className="w-4 h-4 text-orange-500" />
-                        <span>{service.price}</span>
-                      </div>
-                    </div>
-                    
-                    <Link
-                      href={`/book?service=${service.id}`}
-                      className="block w-full text-center py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-orange-500 hover:text-white transition-all transform group-hover:scale-[1.02]"
-                    >
-                      Book This Service
-                    </Link>
-                  </div>
-                </div>
-              ))
+              <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+              >
+                {services.map((service) => (
+                  <motion.div key={service.id} variants={itemVariants}>
+                    <ServiceCard service={service} onSelect={() => window.location.href = '/book'} />
+                  </motion.div>
+                ))}
+              </motion.div>
             )}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="bg-zinc-900/30 border-t border-gray-800 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-serif font-bold mb-8">Elevate Your Look Today</h2>
-          <Link
-            href="/book"
-            className="inline-flex items-center gap-3 px-10 py-4 bg-orange-500 text-white rounded-xl font-bold text-lg hover:bg-orange-600 transition-all transform hover:scale-105 shadow-xl shadow-orange-500/20"
-          >
-            Schedule Appointment
-            <Calendar className="w-5 h-5" />
+        {/* Features/Trust */}
+        {/* Features/Trust */}
+        <section className="py-32 bg-gray-50/50">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid md:grid-cols-4 gap-12 text-center">
+              {[
+                { icon: <Award className="w-6 h-6" />, title: "Certified Expert", desc: "Professional training in all installations." },
+                { icon: <Users className="w-6 h-6" />, title: "Personalized", desc: "Consultations included with every service." },
+                { icon: <Clock className="w-6 h-6" />, title: "Efficient", desc: "Expert speed without compromising quality." },
+                { icon: <Star className="w-6 h-6" />, title: "Premium", desc: "Only high-end products and techniques used." }
+              ].map((item, i) => (
+                <div key={i}>
+                  <div className="w-12 h-12 rounded-full bg-white border border-gray-100 flex items-center justify-center mx-auto mb-6 text-black">
+                    {item.icon}
+                  </div>
+                  <h3 className="text-sm font-bold uppercase tracking-widest mb-4 text-black">{item.title}</h3>
+                  <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-[0.2em]">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="py-20 bg-white border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <Link href="/" className="inline-block mb-10">
+            <span className="text-2xl font-serif font-bold tracking-tight">
+              Laid<span className="text-black">byOma</span>
+            </span>
           </Link>
-          <p className="mt-12 text-gray-500 text-sm">
-            © {new Date().getFullYear()} LaidbyOma. Professional excellence in every stitch.
-          </p>
+          <div className="flex justify-center gap-10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            <Link href="/" className="hover:text-black">Home</Link>
+            <Link href="/book" className="hover:text-black">Book Now</Link>
+            <Link href="#contact" className="hover:text-black">Contact</Link>
+          </div>
+          <p className="mt-10 text-[10px] text-gray-400 font-bold uppercase tracking-widest">© 2024 LaidbyOma. All rights reserved.</p>
         </div>
       </footer>
     </div>

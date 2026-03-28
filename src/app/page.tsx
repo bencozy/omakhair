@@ -1,12 +1,12 @@
 'use client';
 
 import Link from "next/link";
-import Image from "next/image";
-import { Calendar, Clock, Star, Menu, X, Users, Award, TrendingUp, Heart, Sparkles, ChevronRight } from "lucide-react";
+import { Calendar, Clock, Star, Menu, X, ArrowRight, CheckCircle2, Instagram, Phone, Mail, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ServiceCard } from "@/components/ServiceCard";
 import { ImprovedContactSection } from "@/components/ImprovedContactSection";
 import { Service } from "@/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [services, setServices] = useState<Service[]>([]);
@@ -30,302 +30,317 @@ export default function Home() {
     fetchServices();
   }, []);
 
-  const featuredServices = services.slice(0, 6);
+  const featuredServices = services.slice(0, 3);
 
-  const testimonials = [
-    {
-      name: "Chioma Adebayo",
-      rating: 5,
-      text: "LaidbyOma transformed my look completely! The braiding work is absolutely stunning and lasted for weeks. Professional, clean, and such a welcoming atmosphere.",
-      service: "Knotless Braids",
-      avatar: "/avatar1.png"
-    },
-    {
-      name: "Amara Okafor",
-      rating: 5,
-      text: "Best frontal installation I've ever had! The attention to detail is incredible. My hair looks so natural and I've received countless compliments. Highly recommend!",
-      service: "Frontal Installation",
-      avatar: "/avatar2.png"
-    },
-    {
-      name: "Ama Mensah",
-      rating: 5,
-      text: "The wig installation was flawless! It looks so natural and blends perfectly. LaidbyOma really knows their craft and made me feel so confident. Worth every penny!",
-      service: "Wig Installation",
-      avatar: "/afrobraidsideview.png"
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
     }
-  ];
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-nude-peach selection:text-black">
       {/* Header */}
-      <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <span className="text-2xl font-bold tracking-tight">
-                  Laid<span className="text-orange-500">byOma</span>
-                </span>
-              </Link>
-            </div>
+      <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center group">
+            <span className="text-2xl font-serif font-bold tracking-tight">
+              Laid<span className="text-black transition-colors duration-300">byOma</span>
+            </span>
+          </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/services" className="text-gray-300 hover:text-white transition-colors font-medium">Services</Link>
-              <Link href="#gallery" className="text-gray-300 hover:text-white transition-colors font-medium">Gallery</Link>
-              <Link href="#about" className="text-gray-300 hover:text-white transition-colors font-medium">About</Link>
-              <Link href="/book" className="px-6 py-2.5 bg-white text-black rounded-lg font-semibold hover:bg-gray-100 transition-all hover:scale-105 text-sm">
-                Book Appointment
-              </Link>
-            </nav>
+          <nav className="hidden md:flex items-center space-x-10">
+            <Link href="/services" className="text-sm font-medium hover:text-nude-peach-dark transition-colors uppercase tracking-widest">Services</Link>
+            <Link href="#about" className="text-sm font-medium hover:text-nude-peach-dark transition-colors uppercase tracking-widest">About</Link>
+            <Link href="#contact" className="text-sm font-medium hover:text-nude-peach-dark transition-colors uppercase tracking-widest">Contact</Link>
+            <Link href="/book" className="px-8 py-3 border border-black text-black text-xs font-bold uppercase tracking-widest rounded-full hover:bg-black hover:text-white transition-all duration-300 active:scale-95">
+              Book Now
+            </Link>
+          </nav>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="text-gray-400 hover:text-white focus:outline-none"
-              >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </div>
+          <button 
+            className="md:hidden p-2"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden bg-black border-b border-gray-800">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              <Link href="/services" className="block px-3 py-2 text-gray-300 hover:text-white">Services</Link>
-              <Link href="#gallery" className="block px-3 py-2 text-gray-300 hover:text-white">Gallery</Link>
-              <Link href="#about" className="block px-3 py-2 text-gray-300 hover:text-white">About</Link>
-              <Link href="/book" className="block px-3 py-2 bg-white text-black rounded-lg font-semibold text-center mt-4">Book Now</Link>
-            </div>
-          </div>
-        )}
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-white border-b border-gray-100 overflow-hidden"
+            >
+              <div className="px-6 py-8 flex flex-col space-y-6">
+                <Link href="/services" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">Services</Link>
+                <Link href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">About</Link>
+                <Link href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">Contact</Link>
+                <Link href="/book" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-4 bg-black text-white text-center rounded-xl font-bold">
+                  Book Appointment
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative h-[90vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/afrobraidsideview.png"
-            alt="Hair Braiding"
-            fill
-            className="object-cover opacity-60 scale-105 hover:scale-100 transition-transform duration-10000"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-sm font-medium mb-6">
-              <Sparkles className="w-4 h-4" />
-              <span>Premium Hair Styling in Houston</span>
-            </div>
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-serif font-bold mb-8 leading-tight tracking-tight">
-              Elegance <br />
-              <span className="text-orange-500 italic">Redefined.</span>
-            </h1>
-            <p className="text-xl text-gray-300 mb-10 leading-relaxed max-w-lg">
-              Experience the art of professional braiding and hair styling. We don't just style hair; we create confidence and celebrate your beauty.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/book"
-                className="px-10 py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105 text-center flex items-center justify-center gap-2 group"
-              >
-                Book Now
-                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/services"
-                className="px-10 py-4 bg-gray-900 text-white border border-gray-800 rounded-xl font-bold text-lg hover:bg-gray-800 transition-all text-center"
-              >
-                View Services
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-12 bg-zinc-900/50 border-y border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-1">500+</div>
-              <div className="text-gray-500 text-sm uppercase tracking-widest">Happy Clients</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-1">10+</div>
-              <div className="text-gray-500 text-sm uppercase tracking-widest">Years Experience</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-1">5.0</div>
-              <div className="text-gray-500 text-sm uppercase tracking-widest">Rating</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-1">20+</div>
-              <div className="text-gray-500 text-sm uppercase tracking-widest">Styles</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Services */}
-      <section className="py-24 sm:py-32 bg-black relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-end mb-16">
-            <div>
-              <h2 className="text-4xl sm:text-5xl font-serif font-bold mb-4">Our Masterpieces</h2>
-              <p className="text-gray-400 text-lg max-w-xl">
-                Explore our signature styles and find the perfect look for your next transformation.
+      <main className="pt-20">
+        {/* Hero Section */}
+        <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-white">
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-gray-50/50 -skew-x-12 translate-x-1/2 pointer-events-none" />
+          
+          <div className="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-20 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white rounded-full border border-gray-200 text-[11px] font-bold uppercase tracking-[0.2em] mb-8">
+                <span className="w-2 h-2 bg-black rounded-full animate-pulse" />
+                Now Booking for Summer
+              </div>
+              <h1 className="text-7xl lg:text-8xl font-serif font-bold leading-[0.9] mb-8">
+                Crafting <br />
+                <span className="italic">Beautiful</span> <br />
+                Moments.
+              </h1>
+              <p className="text-xl text-gray-500 mb-12 max-w-lg leading-relaxed">
+                Elevate your style with our signature hair services. Specialized in professional installations and braiding with a focus on natural elegance.
               </p>
-            </div>
-            <Link href="/services" className="hidden sm:flex items-center gap-2 text-orange-500 font-semibold hover:text-orange-400 transition-colors">
-              See all services <ChevronRight className="w-5 h-5" />
-            </Link>
-          </div>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <Link href="/book" className="group px-10 py-5 border-2 border-black text-black rounded-full font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-black hover:text-white transition-all duration-300">
+                  Secure Your Spot
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link href="/services" className="px-10 py-5 border border-black rounded-full font-bold uppercase tracking-widest text-xs flex items-center justify-center hover:bg-black hover:text-white transition-all duration-300">
+                  View Services
+                </Link>
+              </div>
+            </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="relative hidden lg:block"
+            >
+              <div className="aspect-[4/5] bg-white rounded-3xl overflow-hidden shadow-2xl relative z-10">
+                <div className="absolute inset-0 bg-nude-peach flex items-center justify-center">
+                  <span className="text-9xl">✨</span>
+                </div>
+              </div>
+              <div className="absolute -top-10 -right-10 w-64 h-64 bg-nude-peach-dark rounded-full blur-3xl opacity-50 -z-10" />
+              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-nude-peach rounded-full blur-3xl opacity-50 -z-10" />
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-32 bg-white">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid md:grid-cols-3 gap-16">
+              {[
+                { title: "Expert Styling", desc: "Decades of combined experience in high-end hair care." },
+                { title: "Premium Products", desc: "Only the finest materials for a lasting, natural look." },
+                { title: "Personalized Care", desc: "Every service is tailored to your unique beauty." }
+              ].map((feature, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <h3 className="text-xl font-serif font-bold mb-4">{feature.title}</h3>
+                  <div className="w-10 h-[1px] bg-black mb-6" />
+                  <p className="text-gray-500 leading-relaxed">{feature.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Featured Services */}
+        <section className="py-32 bg-gray-50/50">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+              <div className="max-w-2xl">
+                <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400 mb-4 block">Our Expertise</span>
+                <h2 className="text-5xl lg:text-6xl font-serif font-bold">Signature <br /> <span className="italic">Services.</span></h2>
+              </div>
+              <Link href="/services" className="text-sm font-bold uppercase tracking-widest border-b-2 border-black pb-1 hover:border-nude-peach-dark hover:text-nude-peach-dark transition-all">
+                View All Services
+              </Link>
+            </div>
+
             {loading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-80 bg-zinc-900/50 rounded-2xl animate-pulse"></div>
-              ))
+              <div className="grid md:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="aspect-[3/4] bg-gray-50 rounded-2xl animate-pulse" />
+                ))}
+              </div>
             ) : (
-              featuredServices.map((service) => (
-                <ServiceCard key={service.id} service={service} />
-              ))
+              <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="grid md:grid-cols-3 gap-8"
+              >
+                {featuredServices.map((service) => (
+                  <motion.div key={service.id} variants={itemVariants}>
+                    <ServiceCard service={service} onSelect={() => window.location.href = '/book'} />
+                  </motion.div>
+                ))}
+              </motion.div>
             )}
           </div>
-          
-          <div className="mt-12 sm:hidden text-center">
-            <Link href="/services" className="inline-flex items-center gap-2 text-orange-500 font-semibold">
-              See all services <ChevronRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Why Choose Us */}
-      <section id="about" className="py-24 sm:py-32 bg-zinc-900/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+        {/* About Section */}
+        <section id="about" className="py-32 bg-white overflow-hidden">
+          <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-32 items-center">
             <div className="relative">
-              <div className="aspect-[4/5] relative rounded-3xl overflow-hidden">
-                <Image
-                  src="/afrobraid.png"
-                  alt="Stylist working"
-                  fill
-                  className="object-cover"
-                />
+              <div className="aspect-[4/5] bg-nude-peach rounded-3xl overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-9xl">👸</span>
+                </div>
               </div>
-              <div className="absolute -bottom-10 -right-10 bg-orange-500 p-8 rounded-2xl hidden sm:block">
-                <Award className="w-12 h-12 text-white mb-4" />
-                <div className="text-white font-bold text-xl leading-tight">Certified Professional <br /> Stylists</div>
+              <div className="absolute -bottom-10 -right-10 bg-white p-8 rounded-2xl shadow-xl max-w-xs">
+                <div className="flex gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-4 h-4 fill-nude-peach-dark text-nude-peach-dark" />)}
+                </div>
+                <p className="text-sm font-medium italic">"The most professional installation I've ever had. My hair feels and looks amazing!"</p>
+              </div>
+            </div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400 mb-4 block">The Experience</span>
+              <h2 className="text-5xl font-serif font-bold mb-10 leading-tight">Elevating Beauty Through <span className="italic">Expertise.</span></h2>
+              <p className="text-lg text-gray-500 mb-10 leading-relaxed">
+                At LaidbyOma, we believe that every appointment is an opportunity to boost your confidence. Our meticulous approach to hair care ensures that you leave our chair feeling like the best version of yourself.
+              </p>
+              <ul className="space-y-6 mb-12">
+                {["Professional Consultations", "Luxury Styling Environment", "Premium Hair Maintenance"].map((item, i) => (
+                  <li key={i} className="flex items-center gap-4 group">
+                    <div className="w-6 h-6 rounded-full bg-nude-peach flex items-center justify-center group-hover:bg-black transition-colors">
+                      <CheckCircle2 className="w-4 h-4 text-black group-hover:text-white" />
+                    </div>
+                    <span className="font-medium text-gray-700">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/book" className="inline-block px-10 py-5 border-2 border-black text-black rounded-full font-bold uppercase tracking-widest text-xs hover:bg-black hover:text-white transition-all">
+                Book Your Session
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="py-32 bg-gray-50/50">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-20">
+              <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400 mb-4 block">Voices of Beauty</span>
+              <h2 className="text-5xl font-serif font-bold italic">Kind Words.</h2>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-12">
+              {[
+                { name: "Chioma Adebayo", text: "LaidbyOma transformed my look completely! The braiding work is absolutely stunning and lasted for weeks." },
+                { name: "Amara Okafor", text: "Best frontal installation I've ever had! The attention to detail is incredible. My hair looks so natural." },
+                { name: "Ama Mensah", text: "The wig installation was flawless! It looks so natural and blends perfectly. Worth every penny!" }
+              ].map((testi, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                  className="bg-white p-10 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-shadow"
+                >
+                  <div className="flex gap-1 mb-6">
+                    {[1, 2, 3, 4, 5].map((s) => <Star key={s} className="w-3 h-3 fill-nude-peach-dark text-nude-peach-dark" />)}
+                  </div>
+                  <p className="text-gray-600 mb-8 italic leading-relaxed">"{testi.text}"</p>
+                  <div className="font-bold uppercase tracking-widest text-[10px]">{testi.name}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <div id="contact" className="py-32 bg-white">
+          <ImprovedContactSection />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white text-black py-20 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-16 mb-20">
+            <div className="col-span-2">
+              <Link href="/" className="inline-block mb-8">
+                <span className="text-3xl font-serif font-bold tracking-tight">
+                  Laid<span className="text-black">byOma</span>
+                </span>
+              </Link>
+              <p className="text-gray-500 max-w-sm leading-relaxed mb-8">
+                Professional hair styling and braiding excellence. Redefining beauty one appointment at a time.
+              </p>
+              <div className="flex gap-4">
+                <a href="#" className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-black hover:text-white transition-all">
+                  <Instagram className="w-5 h-5" />
+                </a>
+                <a href="#" className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-black hover:text-white transition-all">
+                  <Phone className="w-5 h-5" />
+                </a>
               </div>
             </div>
             
             <div>
-              <h2 className="text-4xl sm:text-5xl font-serif font-bold mb-10 leading-tight">Why Choose <br />LaidbyOma?</h2>
-              <div className="space-y-8">
-                <div className="flex gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-                    <Heart className="w-7 h-7 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Personalized Care</h3>
-                    <p className="text-gray-400 leading-relaxed">Every client is unique. We take the time to understand your hair goals and provide custom styling that suits your lifestyle.</p>
-                  </div>
-                </div>
-                <div className="flex gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-7 h-7 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Expert Techniques</h3>
-                    <p className="text-gray-400 leading-relaxed">Our stylists stay updated with the latest trends and techniques to ensure you get the most modern and durable styles.</p>
-                  </div>
-                </div>
-                <div className="flex gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-7 h-7 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Quality Products</h3>
-                    <p className="text-gray-400 leading-relaxed">We use only premium products to protect your natural hair and achieve a flawless, long-lasting finish.</p>
-                  </div>
-                </div>
-              </div>
+              <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-8">Quick Links</h4>
+              <ul className="space-y-4 text-sm text-gray-500">
+                <li><Link href="/services" className="hover:text-black transition-colors">Services</Link></li>
+                <li><Link href="#about" className="hover:text-black transition-colors">About</Link></li>
+                <li><Link href="/book" className="hover:text-black transition-colors">Book Now</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-8">Contact</h4>
+              <ul className="space-y-4 text-sm text-gray-500">
+                <li className="flex items-center gap-3"><Mail className="w-4 h-4" /> Laidbyomaa@gmail.com</li>
+                <li className="flex items-center gap-3"><MapPin className="w-4 h-4" /> Style City, USA</li>
+              </ul>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-24 sm:py-32 bg-black overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl sm:text-5xl font-serif font-bold mb-6">Client Love</h2>
-            <div className="flex justify-center gap-1 mb-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className="w-6 h-6 fill-orange-500 text-orange-500" />
-              ))}
+          
+          <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            <p>© 2024 LaidbyOma. All rights reserved.</p>
+            <div className="flex gap-8">
+              <Link href="#" className="hover:text-black">Privacy Policy</Link>
+              <Link href="#" className="hover:text-black">Terms of Service</Link>
             </div>
-            <p className="text-gray-400">Join our community of satisfied beautiful clients</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, i) => (
-              <div key={i} className="p-8 rounded-3xl bg-zinc-900/50 border border-gray-800 hover:border-orange-500/30 transition-all group">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-full overflow-hidden relative grayscale group-hover:grayscale-0 transition-all">
-                    <Image src={testimonial.avatar} alt={testimonial.name} fill className="object-cover" />
-                  </div>
-                  <div>
-                    <div className="font-bold">{testimonial.name}</div>
-                    <div className="text-orange-500 text-xs font-medium uppercase tracking-wider">{testimonial.service}</div>
-                  </div>
-                </div>
-                <p className="text-gray-300 leading-relaxed italic">"{testimonial.text}"</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 sm:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-orange-500 translate-y-1/2 rounded-[100%] blur-[120px] opacity-20"></div>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h2 className="text-5xl sm:text-6xl font-serif font-bold mb-8">Ready to Shine?</h2>
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-            Book your appointment today and let us bring out the best version of you. Your journey to beautiful hair starts here.
-          </p>
-          <Link
-            href="/book"
-            className="inline-flex items-center gap-3 px-12 py-5 bg-white text-black rounded-2xl font-bold text-xl hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105 shadow-2xl shadow-white/10"
-          >
-            Schedule Now
-            <Calendar className="w-6 h-6" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <ImprovedContactSection />
-
-      {/* Footer */}
-      <footer className="bg-black border-t border-gray-800 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="text-2xl font-bold mb-6">
-            Laid<span className="text-orange-500">byOma</span>
-          </div>
-          <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} LaidbyOma. All rights reserved. Professional Hair Styling in Houston, TX.
-          </p>
         </div>
       </footer>
     </div>

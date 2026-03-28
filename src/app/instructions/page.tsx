@@ -163,7 +163,7 @@ export default function InstructionsPage() {
             <div className="mt-8 text-center">
               <Link 
                 href="/book" 
-                className="inline-block bg-black text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-900 transition-colors shadow-lg"
+                className="inline-block border border-black text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors shadow-sm"
               >
                 Book Your Appointment Now
               </Link>
