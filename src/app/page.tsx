@@ -117,7 +117,7 @@ export default function Home() {
                 <span className="italic">Beautiful</span> <br />
                 Moments.
               </h1>
-              <p className="text-xl text-gray-500 mb-12 max-w-lg leading-relaxed">
+              <p className="text-xl text-gray-700 mb-12 max-w-lg leading-relaxed">
                 Elevate your style with our signature hair services. Specialized in professional installations and braiding with a focus on natural elegance.
               </p>
               <div className="flex flex-col sm:flex-row gap-6">
@@ -166,7 +166,7 @@ export default function Home() {
                 >
                   <h3 className="text-xl font-serif font-bold mb-4">{feature.title}</h3>
                   <div className="w-10 h-[1px] bg-black mb-6" />
-                  <p className="text-gray-500 leading-relaxed">{feature.desc}</p>
+                  <p className="text-gray-700 leading-relaxed">{feature.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -234,7 +234,7 @@ export default function Home() {
             >
               <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400 mb-4 block">The Experience</span>
               <h2 className="text-5xl font-serif font-bold mb-10 leading-tight">Elevating Beauty Through <span className="italic">Expertise.</span></h2>
-              <p className="text-lg text-gray-500 mb-10 leading-relaxed">
+              <p className="text-lg text-gray-700 mb-10 leading-relaxed">
                 At LaidbyOma, we believe that every appointment is an opportunity to boost your confidence. Our meticulous approach to hair care ensures that you leave our chair feeling like the best version of yourself.
               </p>
               <ul className="space-y-6 mb-12">

@@ -88,8 +88,13 @@ function BookPageContent() {
   useEffect(() => {
     if (formData.appointmentDate && formData.selectedServices.length > 0) {
       setLoadingSlots(true);
-      const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
-      const slots = generateTimeSlots(formData.appointmentDate, totalDuration, existingBookings);
+      const slots = generateTimeSlots(
+        formData.appointmentDate, 
+        existingBookings, 
+        formData.selectedServices, 
+        formData.selectedAddons, 
+        services
+      );
       setAvailableSlots(slots);
       setLoadingSlots(false);
     }
@@ -314,7 +319,7 @@ function BookPageContent() {
               >
                 <div className="text-center">
                   <h2 className="text-4xl font-serif font-bold mb-4">Choose Your Service.</h2>
-                  <p className="text-gray-500">Select the treatments you&apos;d like to receive today.</p>
+                  <p className="text-gray-700">Select the treatments you&apos;d like to receive today.</p>
                 </div>
 
                 <div className="relative">
@@ -366,8 +371,8 @@ function BookPageContent() {
               >
                 <div className="lg:col-span-3 space-y-12">
                   <section>
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-400 flex items-center gap-3">
-                      <span className="w-8 h-[1px] bg-gray-200" />
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-700 flex items-center gap-3">
+                      <span className="w-8 h-[1px] bg-gray-300" />
                       Select Date & Time
                     </h3>
                     <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm overflow-hidden">
@@ -394,7 +399,7 @@ function BookPageContent() {
                             className={`py-4 rounded-xl text-xs font-bold transition-all border ${
                               formData.selectedTime === slot.time
                                 ? 'bg-black text-white border-black shadow-lg scale-95'
-                                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border-gray-100'
+                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-100'
                             }`}
                           >
                             {slot.time}
@@ -409,39 +414,39 @@ function BookPageContent() {
                   </section>
 
                   <section>
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-400 flex items-center gap-3">
-                      <span className="w-8 h-[1px] bg-gray-200" />
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-700 flex items-center gap-3">
+                      <span className="w-8 h-[1px] bg-gray-300" />
                       Personal Information
                     </h3>
                     <div className="grid sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">First Name</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">First Name</label>
                         <input
                           type="text"
                           placeholder="Jane"
                           value={formData.firstName}
                           onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Last Name</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Last Name</label>
                         <input
                           type="text"
                           placeholder="Doe"
                           value={formData.lastName}
                           onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
                       </div>
                       <div className="sm:col-span-2 space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Email Address</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Email Address</label>
                         <input
                           type="email"
                           placeholder="jane@example.com"
                           value={formData.email}
                           onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
                       </div>
                       <div className="sm:col-span-2 space-y-2">
