@@ -53,6 +53,29 @@ function BookPageContent() {
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const fullyBookedDates = useMemo(() => {
+    if (formData.selectedServices.length === 0) return [];
+    
+    const fullyBooked: string[] = [];
+    const today = startOfToday();
+    
+    for (let i = 0; i < 60; i++) {
+      const date = addDays(today, i);
+      const slots = generateTimeSlots(
+        date, 
+        existingBookings, 
+        formData.selectedServices, 
+        formData.selectedAddons, 
+        services
+      );
+      
+      if (slots.length > 0 && !slots.some(s => s.available)) {
+        fullyBooked.push(date.toDateString());
+      }
+    }
+    return fullyBooked;
+  }, [existingBookings, formData.selectedServices, formData.selectedAddons, services]);
+
 
   // Fetch services and initial data
   useEffect(() => {
@@ -167,13 +190,53 @@ function BookPageContent() {
     if (validateStep()) {
       if (step === 2) {
         setLoading(true);
+        setBookingError('');
         try {
           const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
           
+          let bookingId = pendingBookingId;
+          
+          if (!bookingId) {
+            // Create pending booking
+            const bookingResponse = await fetch('/api/bookings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...formData,
+                status: 'pending'
+              }),
+            });
+            
+            const bookingResult = await bookingResponse.json();
+            if (bookingResult.success) {
+              bookingId = bookingResult.booking._id;
+              setPendingBookingId(bookingId);
+            } else {
+              throw new Error(bookingResult.error || 'Failed to create booking');
+            }
+          } else {
+            // Update existing pending booking
+            const bookingResponse = await fetch('/api/bookings/' + bookingId, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData),
+            });
+            
+            if (!bookingResponse.ok) {
+              const errorData = await bookingResponse.json();
+              throw new Error(errorData.error || 'Failed to update booking');
+            }
+          }
+          
+          // Now create payment intent with the bookingId
           const response = await fetch('/api/payments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: totalAmount }),
+            body: JSON.stringify({ 
+              action: 'create-intent',
+              amount: totalAmount,
+              bookingId: bookingId
+            }),
           });
           
           const data = await response.json();
@@ -182,10 +245,10 @@ function BookPageContent() {
             setPaymentIntentId(data.paymentIntentId);
             setStep(3);
           } else {
-            setBookingError('Failed to initialize payment. Please try again.');
+            setBookingError(data.error || 'Failed to initialize payment. Please try again.');
           }
         } catch (error) {
-          setBookingError('An error occurred. Please try again later.');
+          setBookingError(error.message || 'An error occurred. Please try again later.');
         } finally {
           setLoading(false);
         }
@@ -205,29 +268,22 @@ function BookPageContent() {
     setLoading(true);
     try {
       const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
-      const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
+      const selectedServiceNames = formData.selectedServices
+        .map(id => services.find(s => s.id === id)?.name)
+        .join(', ');
 
-      const bookingData = {
-        ...formData,
-        totalAmount,
-        totalDuration,
-        paymentStatus: 'paid',
-        paymentIntentId,
-        status: 'confirmed',
-        createdAt: new Date().toISOString()
-      };
-
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
+      // Update the existing pending booking to confirmed
+      const response = await fetch('/api/bookings/' + pendingBookingId, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData),
+        body: JSON.stringify({ 
+          status: 'confirmed',
+          paymentStatus: 'paid',
+          paymentIntentId
+        }),
       });
 
       if (response.ok) {
-        const selectedServiceNames = formData.selectedServices
-          .map(id => services.find(s => s.id === id)?.name)
-          .join(', ');
-        
         const queryParams = new URLSearchParams({
           firstName: formData.firstName,
           date: format(formData.appointmentDate, 'MMMM d, yyyy'),
@@ -237,13 +293,13 @@ function BookPageContent() {
           email: formData.email
         });
         
-        router.push(`/book/success?${queryParams.toString()}`);
+        router.push('/book/success?' + queryParams.toString());
       } else {
         const errorData = await response.json();
-        setBookingError(errorData.error || 'Failed to save booking. Please contact support.');
+        setBookingError(errorData.error || 'Failed to update booking. Please contact support.');
       }
     } catch (error) {
-      setBookingError('An error occurred while saving your booking.');
+      setBookingError('An error occurred while confirming your booking.');
     } finally {
       setLoading(false);
     }
@@ -407,7 +463,7 @@ function BookPageContent() {
                             minDate={startOfToday()}
                             maxDate={addDays(new Date(), 60)}
                             className="w-full border-none font-sans"
-                            tileDisabled={({ date }) => blockedDates.some(bd => bd.toDateString() === date.toDateString())}
+                            tileDisabled={({ date }) => blockedDates.some(bd => bd.toDateString() === date.toDateString()) || fullyBookedDates.includes(date.toDateString())}
                           />
                         </div>
 
