@@ -90,7 +90,7 @@ A modern, responsive booking website for hair and makeup appointments built with
    ```
 
 5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+   Navigate to [http://localhost:3007](http://localhost:3007)
 
 ## Google Calendar Setup (Optional)
 
