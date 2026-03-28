@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard, Search, ChevronRight, Check } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard, Search, ChevronRight, Check, X } from 'lucide-react';
 import Calendar from 'react-calendar';
 import { format, addDays, startOfToday } from 'date-fns';
 import { loadStripe } from '@stripe/stripe-js';
@@ -21,6 +21,7 @@ import {
   validatePhone
 } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from '@/components/ui/modal';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -51,6 +52,7 @@ function BookPageContent() {
   const [clientSecret, setClientSecret] = useState<string>('');
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
 
   // Fetch services and initial data
   useEffect(() => {
@@ -151,61 +153,57 @@ function BookPageContent() {
       }
     } else if (step === 2) {
       if (!formData.selectedTime) newErrors.time = 'Please select an appointment time.';
-      if (!formData.firstName.trim()) newErrors.firstName = 'First name is required.';
-      if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required.';
-      if (!validateEmail(formData.email)) newErrors.email = 'Please enter a valid email address.';
-      if (!validatePhone(formData.phone)) newErrors.phone = 'Please enter a valid phone number.';
+      if (!formData.firstName) newErrors.firstName = 'First name is required.';
+      if (!formData.lastName) newErrors.lastName = 'Last name is required.';
+      if (!formData.email || !validateEmail(formData.email)) newErrors.email = 'Valid email is required.';
+      if (!formData.phone || !validatePhone(formData.phone)) newErrors.phone = 'Valid phone is required.';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const nextStep = async () => {
-    if (!validateStep()) return;
-    
-    if (step === 2) {
-      try {
+    if (validateStep()) {
+      if (step === 2) {
         setLoading(true);
-        const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
-        
-        const response = await fetch('/api/payments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: totalAmount,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-          }),
-        });
-
-        const data = await response.json();
-        if (data.clientSecret) {
-          setClientSecret(data.clientSecret);
-          setPaymentIntentId(data.paymentIntentId);
-          setStep(3);
-        } else {
-          setBookingError(data.error || 'Failed to initialize payment.');
+        try {
+          const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
+          
+          const response = await fetch('/api/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: totalAmount }),
+          });
+          
+          const data = await response.json();
+          if (data.clientSecret) {
+            setClientSecret(data.clientSecret);
+            setPaymentIntentId(data.paymentIntentId);
+            setStep(3);
+          } else {
+            setBookingError('Failed to initialize payment. Please try again.');
+          }
+        } catch (error) {
+          setBookingError('An error occurred. Please try again later.');
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        setBookingError('An error occurred. Please try again.');
-      } finally {
-        setLoading(false);
+      } else {
+        setStep(step + 1);
+        window.scrollTo(0, 0);
       }
-    } else {
-      setStep(prev => prev + 1);
     }
   };
 
   const prevStep = () => {
-    setStep(prev => prev - 1);
-    setBookingError('');
+    setStep(step - 1);
+    window.scrollTo(0, 0);
   };
 
   const handlePaymentSuccess = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
       const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
 
@@ -373,44 +371,94 @@ function BookPageContent() {
                   <section>
                     <h3 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-gray-700 flex items-center gap-3">
                       <span className="w-8 h-[1px] bg-gray-300" />
-                      Select Date & Time
+                      Select Appointment Time
                     </h3>
-                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm overflow-hidden">
-                      <Calendar
-                        onChange={(d) => setFormData(prev => ({ ...prev, appointmentDate: d as Date }))}
-                        value={formData.appointmentDate}
-                        minDate={startOfToday()}
-                        maxDate={addDays(new Date(), 60)}
-                        className="w-full border-none font-sans"
-                        tileDisabled={({ date }) => blockedDates.some(bd => bd.toDateString() === date.toDateString())}
-                      />
+                    
+                    <div 
+                      onClick={() => setIsCalendarModalOpen(true)}
+                      className="group cursor-pointer bg-white border border-gray-100 rounded-[32px] p-10 shadow-sm hover:shadow-xl hover:border-black transition-all duration-500 flex flex-col items-center text-center gap-6"
+                    >
+                      <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-black transition-colors duration-500">
+                        <CalendarIcon className="w-8 h-8 text-black group-hover:text-white transition-colors duration-500" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold uppercase tracking-widest text-black mb-2">
+                          {format(formData.appointmentDate, 'EEEE, MMMM do')}
+                        </div>
+                        <div className="text-2xl font-serif font-bold italic text-black">
+                          {formData.selectedTime ? formData.selectedTime : 'Choose Your Slot'}
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 group-hover:border-black group-hover:text-black transition-all">
+                        Change Date & Time
+                      </div>
                     </div>
 
-                    <div className="mt-8 grid grid-cols-3 sm:grid-cols-4 gap-3">
-                      {loadingSlots ? (
-                        Array(8).fill(0).map((_, i) => (
-                          <div key={i} className="h-12 bg-gray-50 rounded-xl animate-pulse" />
-                        ))
-                      ) : availableSlots.length > 0 ? (
-                        availableSlots.map((slot) => (
-                          <button
-                            key={slot.time}
-                            onClick={() => setFormData(prev => ({ ...prev, selectedTime: slot.time }))}
-                            className={`py-4 rounded-xl text-xs font-bold transition-all border ${
-                              formData.selectedTime === slot.time
-                                ? 'bg-black text-white border-black shadow-lg scale-95'
-                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-100'
-                            }`}
-                          >
-                            {slot.time}
-                          </button>
-                        ))
-                      ) : (
-                        <div className="col-span-full py-10 text-center text-gray-400 text-sm italic bg-gray-50 rounded-2xl">
-                          No available times for this date.
+                    <Modal 
+                      isOpen={isCalendarModalOpen} 
+                      onClose={() => setIsCalendarModalOpen(false)}
+                      title="Select Date & Time"
+                    >
+                      <div className="space-y-12">
+                        <div className="bg-gray-50/50 rounded-[24px] p-4">
+                          <Calendar
+                            onChange={(d) => setFormData(prev => ({ ...prev, appointmentDate: d as Date }))}
+                            value={formData.appointmentDate}
+                            minDate={startOfToday()}
+                            maxDate={addDays(new Date(), 60)}
+                            className="w-full border-none font-sans"
+                            tileDisabled={({ date }) => blockedDates.some(bd => bd.toDateString() === date.toDateString())}
+                          />
                         </div>
-                      )}
-                    </div>
+
+                        <div className="space-y-6">
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-3 px-2">
+                            Available Time Slots
+                            <div className="flex-1 h-[1px] bg-gray-100" />
+                          </h4>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                            {loadingSlots ? (
+                              Array(8).fill(0).map((_, i) => (
+                                <div key={i} className="h-16 bg-gray-50 rounded-2xl animate-pulse" />
+                              ))
+                            ) : availableSlots.length > 0 ? (
+                              availableSlots.map((slot) => (
+                                <button
+                                  key={slot.time}
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, selectedTime: slot.time }));
+                                    setIsCalendarModalOpen(false);
+                                  }}
+                                  className={`py-5 rounded-2xl text-xs font-bold transition-all duration-300 border-2 ${
+                                    formData.selectedTime === slot.time
+                                      ? 'bg-black text-white border-black shadow-xl -translate-y-1'
+                                      : 'bg-white text-gray-700 hover:border-black border-gray-100'
+                                  }`}
+                                >
+                                  {slot.time}
+                                </button>
+                              ))
+                            ) : (
+                              <div className="col-span-full py-16 text-center text-gray-400 text-sm italic bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                                No available times for this date.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() => setIsCalendarModalOpen(false)}
+                            className="px-10 py-4 bg-black text-white rounded-full font-bold uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+                          >
+                            Confirm Selection
+                          </button>
+                        </div>
+                      </div>
+                    </Modal>
+                    {errors.time && (
+                      <div className="mt-4 text-red-500 text-xs font-bold uppercase tracking-widest text-center">{errors.time}</div>
+                    )}
                   </section>
 
                   <section>
@@ -428,6 +476,7 @@ function BookPageContent() {
                           onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                           className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
+                        {errors.firstName && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.firstName}</span>}
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Last Name</label>
@@ -438,6 +487,7 @@ function BookPageContent() {
                           onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                           className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
+                        {errors.lastName && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.lastName}</span>}
                       </div>
                       <div className="sm:col-span-2 space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Email Address</label>
@@ -448,6 +498,7 @@ function BookPageContent() {
                           onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                           className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
+                        {errors.email && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.email}</span>}
                       </div>
                       <div className="sm:col-span-2 space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Phone Number</label>
@@ -456,8 +507,9 @@ function BookPageContent() {
                           placeholder="(555) 000-0000"
                           value={formData.phone}
                           onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none"
                         />
+                        {errors.phone && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.phone}</span>}
                       </div>
                       <div className="sm:col-span-2 space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Special Instructions (Optional)</label>

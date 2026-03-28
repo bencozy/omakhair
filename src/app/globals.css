@@ -79,3 +79,96 @@ body {
   border-color: #9ca3af;
   opacity: 0.6;
 }
+
+/* React Calendar Premium Styles */
+.react-calendar {
+  width: 100% !important;
+  background: white;
+  border: none !important;
+  font-family: inherit !important;
+}
+
+.react-calendar__navigation {
+  display: flex;
+  margin-bottom: 2rem;
+  align-items: center;
+}
+
+.react-calendar__navigation button {
+  min-width: 44px;
+  background: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: black;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background-color: #f9fafb;
+  border-radius: 99px;
+}
+
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.react-calendar__month-view__days__day {
+  padding: 1rem 0 !important;
+  font-weight: 500;
+  font-size: 14px;
+  color: #374151;
+}
+
+.react-calendar__tile {
+  background: none;
+  text-align: center;
+  line-height: 16px;
+  border-radius: 12px;
+  transition: all 0.2s;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: #f3f4f6;
+  color: black;
+}
+
+.react-calendar__tile--now {
+  background: #f3f4f6 !important;
+  color: black !important;
+  font-weight: 700;
+}
+
+.react-calendar__tile--active {
+  background: black !important;
+  color: white !important;
+  font-weight: 700;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+  background: black !important;
+}
+
+.react-calendar__tile:disabled {
+  background-color: transparent !important;
+  color: #d1d5db !important;
+  cursor: not-allowed;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: #e5e7eb !important;
+}
