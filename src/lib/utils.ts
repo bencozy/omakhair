@@ -83,14 +83,9 @@ export function calculateTotalPrice(serviceIds: string[], selectedAddons: { [ser
 
 export function generateTimeSlots(
   date: Date, 
-  existingBookings: Booking[] = [], 
-  selectedServiceIds: string[] = [], 
-  selectedAddons: { [serviceId: string]: string[] } = {},
-  services?: Service[]
+  totalDuration: number, 
+  existingBookings: Booking[] = []
 ): TimeSlot[] {
-  const list = services || getServices()
-  const totalDuration = calculateTotalDuration(selectedServiceIds, selectedAddons, list)
-  
   if (totalDuration === 0) return []
   
   // Business hours: 9 AM to 6 PM
@@ -112,12 +107,24 @@ export function generateTimeSlots(
     
     // Check if slot overlaps with any existing booking
     const isAvailable = !existingBookings.some(booking => {
-      const bookingStart = new Date(booking.appointmentDate)
-      const bookingEnd = addMinutes(bookingStart, booking.totalDuration)
+      if (booking.status === 'cancelled') return false;
+
+      const bookingDate = new Date(booking.appointmentDate)
+      if (!isSameDay(currentSlot, bookingDate)) return false;
+
+      // Parse startTime and endTime "HH:mm"
+      const [startH, startM] = booking.startTime.split(':').map(Number)
+      const [endH, endM] = booking.endTime.split(':').map(Number)
+      
+      const bookingStart = new Date(bookingDate)
+      bookingStart.setHours(startH, startM, 0, 0)
+      
+      const bookingEnd = new Date(bookingDate)
+      bookingEnd.setHours(endH, endM, 0, 0)
       
       return (
         (isBefore(currentSlot, bookingEnd) && isAfter(slotEndTime, bookingStart)) ||
-        (isSameDay(currentSlot, bookingStart) && currentSlot.getTime() === bookingStart.getTime())
+        (currentSlot.getTime() === bookingStart.getTime())
       )
     })
     
