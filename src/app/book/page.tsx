@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, Mail, MessageSquare, AlertCircle, CheckCircle, DollarSign, CreditCard, Search } from 'lucide-react';
@@ -10,9 +10,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { ServiceList } from '@/components/ServiceList';
 import { PaymentForm } from '@/components/PaymentForm';
-import { BookingFormData, TimeSlot, Booking } from '@/types';
+import { BookingFormData, TimeSlot, Booking, Service } from '@/types';
 import { 
-  getServices, 
   generateTimeSlots, 
   calculateTotalPrice, 
   calculateTotalDuration,
@@ -28,6 +27,7 @@ function BookPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
+  const [services, setServices] = useState<Service[]>([]);
   const [formData, setFormData] = useState<BookingFormData>({
     firstName: '',
     lastName: '',
@@ -42,7 +42,7 @@ function BookPageContent() {
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
   const [blockedDates, setBlockedDates] = useState<Date[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [bookingError, setBookingError] = useState<string>('');
@@ -51,30 +51,59 @@ function BookPageContent() {
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const services = getServices();
-  const filteredServices = services.filter(service => {
-    const query = searchQuery.toLowerCase();
-    const matchesService = 
-      service.name.toLowerCase().includes(query) ||
-      service.description.toLowerCase().includes(query) ||
-      service.category.toLowerCase().includes(query);
-    
-    const matchesAddons = service.addons?.some(addon => 
-      addon.name.toLowerCase().includes(query) ||
-      addon.description.toLowerCase().includes(query)
-    ) || false;
-    
-    return matchesService || matchesAddons;
-  });
-  const selectedServices = services.filter(service => formData.selectedServices.includes(service.id));
-  const totalPrice = calculateTotalPrice(formData.selectedServices, formData.selectedAddons);
-  const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons);
+  // Fetch services on mount
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const response = await fetch('/api/services');
+        const data = await response.json();
+        if (data.services) {
+          setServices(data.services);
+        }
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchServices();
+  }, []);
+
+  const filteredServices = useMemo(() => {
+    return services.filter(service => {
+      const query = searchQuery.toLowerCase();
+      const matchesService = 
+        service.name.toLowerCase().includes(query) ||
+        service.description.toLowerCase().includes(query) ||
+        service.category.toLowerCase().includes(query);
+      
+      const matchesAddons = service.addons?.some(addon => 
+        addon.name.toLowerCase().includes(query) ||
+        addon.description.toLowerCase().includes(query)
+      ) || false;
+      
+      return matchesService || matchesAddons;
+    });
+  }, [services, searchQuery]);
+
+  const selectedServices = useMemo(() => {
+    return services.filter(service => formData.selectedServices.includes(service.id));
+  }, [services, formData.selectedServices]);
+
+  const totalPrice = useMemo(() => {
+    return calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
+  }, [formData.selectedServices, formData.selectedAddons, services]);
+
+  const totalDuration = useMemo(() => {
+    return calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
+  }, [formData.selectedServices, formData.selectedAddons, services]);
 
   // Load state from URL on mount
   useEffect(() => {
     const stepParam = searchParams.get('step');
     const servicesParam = searchParams.get('services');
     const addonsParam = searchParams.get('addons');
+    const directServiceParam = searchParams.get('service');
     
     if (stepParam) {
       const stepNum = parseInt(stepParam, 10);
@@ -83,7 +112,13 @@ function BookPageContent() {
       }
     }
     
-    if (servicesParam) {
+    if (directServiceParam) {
+      setFormData(prev => ({
+        ...prev,
+        selectedServices: [directServiceParam]
+      }));
+      setStep(1);
+    } else if (servicesParam) {
       try {
         const selectedServices = JSON.parse(decodeURIComponent(servicesParam));
         const selectedAddons = addonsParam ? JSON.parse(decodeURIComponent(addonsParam)) : {};
@@ -147,108 +182,62 @@ function BookPageContent() {
       try {
         const response = await fetch('/api/bookings');
         const data = await response.json();
-        
         if (data.bookings) {
-          const bookings = data.bookings.map((booking: any) => {
-            // Parse appointment date without timezone conversion
-            const dateStr = booking.appointmentDate.split('T')[0]; // Get YYYY-MM-DD
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const appointmentDate = new Date(year, month - 1, day); // month is 0-indexed
-            
-            return {
-              id: booking._id,
-              customerId: booking.customerId._id || booking.customerId,
-              customer: typeof booking.customerId === 'object' ? {
-                id: booking.customerId._id,
-                firstName: booking.customerId.firstName,
-                lastName: booking.customerId.lastName,
-                email: booking.customerId.email,
-                phone: booking.customerId.phone
-              } : booking.customer,
-              serviceIds: booking.serviceIds,
-              services: booking.services,
-              appointmentDate,
-              startTime: booking.startTime,
-              endTime: booking.endTime,
-              totalPrice: booking.totalPrice,
-              discountAmount: booking.discountAmount || 0,
-              finalPrice: booking.finalPrice,
-              status: booking.status,
-              notes: booking.notes || '',
-              createdAt: new Date(booking.createdAt),
-              updatedAt: new Date(booking.updatedAt)
-            };
-          });
-          console.log('Loaded bookings for time blocking:', bookings.map(b => ({
-            date: b.appointmentDate,
-            time: `${b.startTime}-${b.endTime}`,
-            status: b.status
-          })));
-          setExistingBookings(bookings);
+          setExistingBookings(data.bookings);
         }
       } catch (error) {
         console.error('Failed to fetch bookings:', error);
-        setExistingBookings([]);
       }
     };
     
-    fetchBookings();
-  }, []);
-
-  // Load blocked dates from API
-  useEffect(() => {
     const fetchBlockedDates = async () => {
       try {
         const response = await fetch('/api/blocked-dates');
         const data = await response.json();
-        
         if (data.blockedDates) {
-          const dates = data.blockedDates.map((item: any) => {
-            // Parse date without timezone conversion
-            const dateStr = item.date.split('T')[0];
-            const [year, month, day] = dateStr.split('-').map(Number);
-            return new Date(year, month - 1, day);
-          });
-          setBlockedDates(dates);
+          setBlockedDates(data.blockedDates.map((d: any) => new Date(d.date)));
         }
       } catch (error) {
         console.error('Failed to fetch blocked dates:', error);
       }
     };
-    
+
+    fetchBookings();
     fetchBlockedDates();
   }, []);
 
-  // Generate time slots when date changes
+  // Update available slots when date or selections change
   useEffect(() => {
-    if (formData.appointmentDate) {
+    if (formData.appointmentDate && formData.selectedServices.length > 0) {
       setLoadingSlots(true);
-      // Add a small delay to show loading state
-      const timeoutId = setTimeout(() => {
+      
+      // Artificial delay for better UX
+      const timer = setTimeout(() => {
         const slots = generateTimeSlots(
-        formData.appointmentDate, 
-        existingBookings, 
-        formData.selectedServices, 
-        formData.selectedAddons
-      );
+          formData.appointmentDate, 
+          existingBookings, 
+          formData.selectedServices, 
+          formData.selectedAddons,
+          services
+        );
         setAvailableSlots(slots);
         setLoadingSlots(false);
-      }, 300);
-
-      return () => clearTimeout(timeoutId);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [formData.appointmentDate, existingBookings, formData.selectedServices, formData.selectedAddons]);
+  }, [formData.appointmentDate, formData.selectedServices, formData.selectedAddons, existingBookings, services]);
 
-  const handleServiceToggle = (serviceId: string) => {
+  const handleServiceSelect = (serviceId: string) => {
     setFormData(prev => {
-      const isRemoving = prev.selectedServices.includes(serviceId);
-      const newSelectedServices = isRemoving
+      const isSelected = prev.selectedServices.includes(serviceId);
+      const newSelectedServices = isSelected
         ? prev.selectedServices.filter(id => id !== serviceId)
         : [...prev.selectedServices, serviceId];
       
-      // If removing service, also remove its addons
+      // Clear addons for removed service
       const newSelectedAddons = { ...prev.selectedAddons };
-      if (isRemoving) {
+      if (isSelected) {
         delete newSelectedAddons[serviceId];
       }
       
@@ -260,876 +249,577 @@ function BookPageContent() {
     });
   };
 
-  const handleAddonToggle = (serviceId: string, addonId: string) => {
+  const handleAddonSelect = (serviceId: string, addonId: string) => {
     setFormData(prev => {
-      const currentAddons = prev.selectedAddons[serviceId] || [];
-      const newAddons = currentAddons.includes(addonId)
-        ? currentAddons.filter(id => id !== addonId)
-        : [...currentAddons, addonId];
+      const serviceAddons = prev.selectedAddons[serviceId] || [];
+      const isSelected = serviceAddons.includes(addonId);
+      
+      const newServiceAddons = isSelected
+        ? serviceAddons.filter(id => id !== addonId)
+        : [...serviceAddons, addonId];
       
       return {
         ...prev,
         selectedAddons: {
           ...prev.selectedAddons,
-          [serviceId]: newAddons
+          [serviceId]: newServiceAddons
         }
       };
     });
   };
 
-  const handleDateSelect = (value: Date | Date[] | null) => {
-    if (value && value instanceof Date) {
-      setFormData(prev => ({ ...prev, appointmentDate: value, selectedTime: '' }));
-      // Clear any previous time selection error when date changes
-      if (errors.time) {
-        setErrors(prev => ({ ...prev, time: '' }));
-      }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
   };
 
-  const validateStep = (stepNumber: number): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (stepNumber === 1) {
-      if (formData.selectedServices.length === 0) {
-        newErrors.services = 'Please select at least one service';
-      }
-    } else if (stepNumber === 2) {
-      if (!formData.selectedTime) {
-        newErrors.time = 'Please select an appointment time';
-      }
-    } else if (stepNumber === 3) {
-      if (!formData.firstName.trim()) {
-        newErrors.firstName = 'First name is required';
-      }
-      if (!formData.lastName.trim()) {
-        newErrors.lastName = 'Last name is required';
-      }
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email is required';
-      } else if (!validateEmail(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
-      }
-      if (!formData.phone.trim()) {
-        newErrors.phone = 'Phone number is required';
-      } else if (!validatePhone(formData.phone)) {
-        newErrors.phone = 'Please enter a valid phone number';
-      }
+  const validateStep1 = () => {
+    if (formData.selectedServices.length === 0) {
+      setBookingError('Please select at least one service');
+      return false;
     }
+    setBookingError('');
+    return true;
+  };
 
+  const validateStep2 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Invalid phone number';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) {
-      setStep(step + 1);
+  const validateStep3 = () => {
+    if (!formData.selectedTime) {
+      setBookingError('Please select an appointment time');
+      return false;
     }
+    setBookingError('');
+    return true;
   };
 
-  const handleBack = () => {
-    setStep(step - 1);
-    setErrors({});
+  const nextStep = () => {
+    if (step === 1 && !validateStep1()) return;
+    if (step === 2 && !validateStep2()) return;
+    if (step === 3 && !validateStep3()) return;
+    
+    setStep(prev => prev + 1);
+    window.scrollTo(0, 0);
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep(3)) return;
+  const prevStep = () => {
+    setStep(prev => prev - 1);
+    window.scrollTo(0, 0);
+  };
 
+  const createInitialBooking = async () => {
     setLoading(true);
     setBookingError('');
     
     try {
-      const year = formData.appointmentDate.getFullYear();
-      const month = String(formData.appointmentDate.getMonth() + 1).padStart(2, '0');
-      const day = String(formData.appointmentDate.getDate()).padStart(2, '0');
-      const localDateString = `${year}-${month}-${day}T00:00:00`;
-
-      const bookingResponse = await fetch('/api/bookings', {
+      const response = await fetch('/api/bookings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          appointmentDate: localDateString,
-        }),
+          totalPrice,
+          totalDuration,
+          status: 'pending'
+        })
       });
-
-      const bookingResult = await bookingResponse.json();
-
-      if (!bookingResponse.ok) {
-        throw new Error(bookingResult.error || 'Failed to create booking');
-      }
-
-      const bookingId = bookingResult.booking._id || bookingResult.booking.id;
-      setPendingBookingId(bookingId);
-
+      
+      const result = await response.json();
+      
+      if (!response.ok) throw new Error(result.error || 'Failed to initialize booking');
+      
+      setPendingBookingId(result.booking._id);
+      
+      // Create Payment Intent
       const paymentResponse = await fetch('/api/payments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'create-intent',
-          bookingId: bookingId,
-          amount: 30,
-          currency: 'usd',
-        }),
+          amount: totalPrice * 100, // Stripe expects cents
+          bookingId: result.booking._id,
+          customerEmail: formData.email
+        })
       });
-
-      const paymentResult = await paymentResponse.json();
-
-      if (!paymentResponse.ok) {
-        throw new Error(paymentResult.error || 'Failed to create payment intent');
-      }
-
-      setClientSecret(paymentResult.clientSecret);
-      setPaymentIntentId(paymentResult.paymentIntentId);
-      setBookingError('');
+      
+      const paymentData = await paymentResponse.json();
+      if (!paymentResponse.ok) throw new Error(paymentData.error || 'Failed to initialize payment');
+      
+      setClientSecret(paymentData.clientSecret);
+      setPaymentIntentId(paymentData.paymentIntentId);
       setStep(4);
     } catch (error: any) {
       console.error('Booking error:', error);
-      setBookingError(error.message || 'Failed to create booking. Please try again.');
+      setBookingError(error.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePaymentSuccess = async () => {
-    setLoading(true);
-    try {
-      const confirmResponse = await fetch('/api/payments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'confirm',
-          paymentIntentId: paymentIntentId,
-          bookingId: pendingBookingId,
-        }),
-      });
-
-      const confirmResult = await confirmResponse.json();
-
-      if (!confirmResponse.ok) {
-        throw new Error(confirmResult.error || 'Failed to confirm payment');
-      }
-
-      localStorage.removeItem('bookingSelections');
-      
-      // Redirect to success page with booking details
-      const params = new URLSearchParams({
-        firstName: formData.firstName,
-        date: format(formData.appointmentDate, 'MMMM d, yyyy'),
-        time: formData.selectedTime,
-        services: `${selectedServices.length} service(s)`,
-        total: formatCurrency(totalPrice),
-        email: formData.email,
-      });
-      
-      router.push(`/book/success?${params.toString()}`);
-    } catch (error: any) {
-      console.error('Payment confirmation error:', error);
-      setBookingError(error.message || 'Failed to confirm payment. Please contact support.');
-    } finally {
-      setLoading(false);
-    }
+  const isDateBlocked = (date: Date) => {
+    return blockedDates.some(blockedDate => isSameDay(blockedDate, date));
   };
 
-  const handlePaymentError = (error: string) => {
-    setBookingError(error);
-  };
-
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Select Services</h2>
-        <p className="text-gray-400">Choose the services you&apos;d like to book</p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="w-full">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search for services..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-            >
-              ✕
-            </button>
-          )}
+  if (step === 5) {
+    return (
+      <div className="max-w-xl mx-auto text-center py-20 px-4">
+        <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
+          <CheckCircle className="w-10 h-10" />
         </div>
-        {searchQuery && (
-          <p className="text-sm text-gray-400 mt-2">
-            Found {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}
-          </p>
-        )}
-      </div>
-      
-      {errors.services && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
-          {errors.services}
-        </div>
-      )}
-
-      {filteredServices.length > 0 ? (
-        <ServiceList
-          services={filteredServices}
-          selectedServices={formData.selectedServices}
-          selectedAddons={formData.selectedAddons}
-          onServiceToggle={handleServiceToggle}
-          onAddonToggle={handleAddonToggle}
-        />
-      ) : (
-        <div className="text-center py-12">
-          <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-400 mb-2">No services found</h3>
-          <p className="text-gray-500">Try adjusting your search terms</p>
-        </div>
-      )}
-
-      {formData.selectedServices.length > 0 && (
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5">
-          <h3 className="font-bold text-white mb-4 text-lg">Selected Services:</h3>
-          <div className="space-y-3">
-            {selectedServices.map((service) => {
-              const serviceAddons = formData.selectedAddons[service.id] || [];
-              const addonTotal = serviceAddons.reduce((total, addonId) => {
-                const addon = service.addons?.find(a => a.id === addonId);
-                return total + (addon?.price || 0);
-              }, 0);
-              
-              return (
-                <div key={service.id} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-300 font-medium">{service.name}</span>
-                    <span className="text-white font-semibold">{formatCurrency(service.price)}</span>
-                  </div>
-                  {serviceAddons.length > 0 && (
-                    <div className="pl-4 space-y-1">
-                      {serviceAddons.map(addonId => {
-                        const addon = service.addons?.find(a => a.id === addonId);
-                        return addon ? (
-                          <div key={addonId} className="flex justify-between text-xs text-gray-400">
-                            <span>+ {addon.name}</span>
-                            <span className="text-orange-400">+{formatCurrency(addon.price)}</span>
-                          </div>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="border-t border-gray-700 mt-4 pt-4 flex justify-between font-bold text-lg">
-            <span className="text-gray-300">Total: {formatDuration(totalDuration)}</span>
-            <span className="text-orange-500">{formatCurrency(totalPrice)}</span>
-          </div>
-        </div>
-      )}
-
-      <button
-        onClick={handleNext}
-        disabled={formData.selectedServices.length === 0}
-        className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-600 disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 transition-all hover:scale-[1.02] shadow-lg"
-      >
-        Continue to Date & Time
-      </button>
-    </div>
-  );
-
-  const renderStep2 = () => (
-    <div className="space-y-6 lg:space-y-8">
-      <div className="text-center">
-        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2 tracking-tight">Select Date & Time</h2>
-        <p className="text-gray-400 text-sm lg:text-base">Choose your preferred appointment date and time</p>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-        <div className="flex flex-col">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4 lg:p-6 shadow-lg h-full flex flex-col">
-            <h3 className="text-lg font-bold text-white mb-4 text-center">Select Date</h3>
-            <div className="flex-1 flex items-center justify-center">
-              <div className="w-full max-w-sm">
-                <Calendar
-                  onChange={handleDateSelect as any}
-                  value={formData.appointmentDate}
-                  minDate={new Date()}
-                  maxDate={addDays(new Date(), 60)}
-                  className="react-calendar-dark"
-                  tileDisabled={({ date, view }) => {
-                    if (view !== 'month') return false;
-                    
-                    // Disable past dates
-                    if (date < startOfToday()) return true;
-                    
-                    // Disable blocked dates
-                    const isBlocked = blockedDates.some(blockedDate => {
-                      const dateStr = format(date, 'yyyy-MM-dd');
-                      const blockedDateStr = format(blockedDate, 'yyyy-MM-dd');
-                      return dateStr === blockedDateStr;
-                    });
-                    
-                    return isBlocked;
-                  }}
-                  showNeighboringMonth={false}
-                  next2Label={null}
-                  prev2Label={null}
-                  formatShortWeekday={(locale, date) => format(date, 'EEE')}
-                  formatMonthYear={(locale, date) => format(date, 'MMMM yyyy')}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4 lg:p-6 shadow-lg h-full flex flex-col">
-            <h3 className="text-lg font-bold text-white mb-2 text-center">
-              Available Times
-            </h3>
-            <p className="text-sm text-gray-300 mb-2 text-center flex items-center justify-center">
-              <CalendarIcon className="w-4 h-4 mr-2 text-orange-500" />
-              {format(formData.appointmentDate, 'EEEE, MMMM d, yyyy')}
-            </p>
-            {totalDuration > 0 && (
-              <p className="text-xs text-gray-400 mb-4 text-center">
-                Your service takes {formatDuration(totalDuration)}
-              </p>
-            )}
-            
-            {errors.time && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg mb-4 flex items-center">
-                <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-red-400 text-xs font-bold">!</span>
-                </div>
-                {errors.time}
-              </div>
-            )}
-
-            <div className="flex-1 flex flex-col">
-              <div className="max-h-80 overflow-y-auto flex-1">
-                {loadingSlots ? (
-                  <div className="flex items-center justify-center py-12 h-full">
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                      <p className="text-gray-400 text-sm">Loading available times...</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-3">
-                    {availableSlots.map((slot, index) => (
-                      <button
-                        key={slot.time}
-                        onClick={() => setFormData(prev => ({ ...prev, selectedTime: slot.time }))}
-                        disabled={!slot.available}
-                        className={`p-3 text-sm font-bold rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2 min-h-[52px] ${
-                          formData.selectedTime === slot.time
-                            ? 'bg-orange-500 text-black border-orange-500 shadow-lg shadow-orange-500/30 scale-105'
-                            : slot.available
-                            ? 'bg-gray-800 text-white border-gray-700 hover:border-orange-500 hover:bg-gray-700 hover:shadow-md'
-                            : 'bg-gray-900 text-gray-600 border-gray-800 cursor-not-allowed opacity-40'
-                        }`}
-                        style={{
-                          animationDelay: `${index * 50}ms`,
-                          animation: loadingSlots ? 'none' : 'fadeIn 0.3s ease-out forwards'
-                        }}
-                        title={!slot.available && slot.bookingId ? `Would overlap with existing booking` : !slot.available ? 'Outside business hours or service would extend beyond closing time' : `Available for ${formatDuration(totalDuration)} service`}
-                      >
-                        <Clock className="w-4 h-4 flex-shrink-0" />
-                        <span className="whitespace-nowrap">{slot.time}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {!loadingSlots && availableSlots.filter(slot => slot.available).length === 0 && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-700">
-                    <Clock className="w-8 h-8 text-gray-500" />
-                  </div>
-                  <p className="text-white font-semibold mb-2">No available times</p>
-                  <p className="text-gray-400 text-sm">Please select another date to see available time slots.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Booking Summary */}
-      {formData.selectedServices.length > 0 && (
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-orange-500" />
-            Booking Summary
-          </h3>
+        <h2 className="text-4xl font-serif font-bold mb-4">Booking Confirmed!</h2>
+        <p className="text-gray-400 mb-10 text-lg">
+          Thank you for choosing LaidbyOma, {formData.firstName}! We've sent a confirmation email to {formData.email} with your appointment details.
+        </p>
+        <div className="bg-zinc-900 rounded-3xl p-8 mb-10 text-left border border-gray-800">
+          <h3 className="font-bold text-xl mb-4 border-b border-gray-800 pb-4">Appointment Summary</h3>
           <div className="space-y-4">
-            {selectedServices.map((service) => {
-              const serviceAddons = formData.selectedAddons[service.id] || [];
-              const addonTotal = serviceAddons.reduce((total, addonId) => {
-                const addon = service.addons?.find(a => a.id === addonId);
-                return total + (addon?.price || 0);
-              }, 0);
-              
-              return (
-                <div key={service.id} className="pb-3 border-b border-gray-700 last:border-0 last:pb-0">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h4 className="font-bold text-white">{service.name}</h4>
-                      <div className="flex items-center gap-3 text-sm text-gray-400 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatDuration(service.duration)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" />
-                          {formatCurrency(service.price)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  {serviceAddons.length > 0 && (
-                    <div className="ml-4 space-y-1 mt-2">
-                      {serviceAddons.map(addonId => {
-                        const addon = service.addons?.find(a => a.id === addonId);
-                        return addon ? (
-                          <div key={addonId} className="flex justify-between text-xs text-gray-400">
-                            <span className="flex items-center gap-1">
-                              <span className="w-1 h-1 bg-orange-500 rounded-full"></span>
-                              {addon.name}
-                            </span>
-                            <span className="text-orange-400">+{formatCurrency(addon.price)}</span>
-                          </div>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="border-t border-gray-700 mt-4 pt-4 flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-400">Total Duration</p>
-              <p className="text-lg font-bold text-white">{formatDuration(totalDuration)}</p>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Date</span>
+              <span className="font-medium">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Total Price</p>
-              <p className="text-2xl font-bold text-orange-500">{formatCurrency(totalPrice)}</p>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Time</span>
+              <span className="font-medium">{formData.selectedTime}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Services</span>
+              <div className="text-right">
+                {selectedServices.map(s => <div key={s.id} className="font-medium">{s.name}</div>)}
+              </div>
+            </div>
+            <div className="flex justify-between border-t border-gray-800 pt-4">
+              <span className="font-bold">Total Paid</span>
+              <span className="font-bold text-orange-500">{formatCurrency(totalPrice)}</span>
             </div>
           </div>
         </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <button
-          onClick={handleBack}
-          className="flex-1 border border-gray-700 bg-gray-800 text-white py-4 rounded-xl font-semibold hover:bg-gray-700 transition-all text-lg"
-        >
-          Back to Services
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!formData.selectedTime}
-          className="flex-1 bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-all hover:scale-[1.02] shadow-lg text-lg"
-        >
-          Continue to Details
-        </button>
+        <Link href="/" className="inline-block px-8 py-4 bg-white text-black rounded-xl font-bold hover:bg-gray-100 transition-all">
+          Return Home
+        </Link>
       </div>
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Your Information</h2>
-        <p className="text-gray-400">Please provide your contact details</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-white mb-2">
-            <User className="w-4 h-4 inline mr-2 text-orange-500" />
-            First Name *
-          </label>
-          <input
-            type="text"
-            value={formData.firstName}
-            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
-              errors.firstName ? 'border-red-500' : 'border-gray-600'
-            }`}
-            placeholder="Enter your first name"
-          />
-          {errors.firstName && (
-            <p className="text-red-400 text-sm mt-1">{errors.firstName}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-white mb-2">
-            <User className="w-4 h-4 inline mr-2 text-orange-500" />
-            Last Name *
-          </label>
-          <input
-            type="text"
-            value={formData.lastName}
-            onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
-              errors.lastName ? 'border-red-500' : 'border-gray-600'
-            }`}
-            placeholder="Enter your last name"
-          />
-          {errors.lastName && (
-            <p className="text-red-400 text-sm mt-1">{errors.lastName}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-white mb-2">
-            <Mail className="w-4 h-4 inline mr-2 text-orange-500" />
-            Email Address *
-          </label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
-              errors.email ? 'border-red-500' : 'border-gray-600'
-            }`}
-            placeholder="Enter your email address"
-          />
-          {errors.email && (
-            <p className="text-red-400 text-sm mt-1">{errors.email}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-white mb-2">
-            <Phone className="w-4 h-4 inline mr-2 text-orange-500" />
-            Phone Number *
-          </label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all ${
-              errors.phone ? 'border-red-500' : 'border-gray-600'
-            }`}
-            placeholder="Enter your phone number"
-          />
-          {errors.phone && (
-            <p className="text-red-400 text-sm mt-1">{errors.phone}</p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-semibold text-white mb-2">
-          <MessageSquare className="w-4 h-4 inline mr-2 text-orange-500" />
-          Additional Notes (Optional)
-        </label>
-        <textarea
-          value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          rows={4}
-          className="w-full px-4 py-3 border-2 border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-gray-700/50 backdrop-blur-sm transition-all"
-          placeholder="Any special requests or notes for your appointment..."
-        />
-      </div>
-
-      {/* Booking Summary */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Booking Summary</h3>
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Date:</span>
-            <span className="font-medium text-white">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Time:</span>
-            <span className="font-medium text-white">{formData.selectedTime}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Duration:</span>
-            <span className="font-medium text-white">{formatDuration(totalDuration)}</span>
-          </div>
-          <div className="border-t border-gray-700 pt-3 mt-3">
-            <div className="flex justify-between text-xl font-bold">
-              <span className="text-gray-300">Total:</span>
-              <span className="text-orange-500">{formatCurrency(totalPrice)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Important Information */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-5">
-        <h4 className="font-bold text-white mb-3 flex items-center gap-2 text-lg">
-          <MessageSquare className="w-5 h-5 text-orange-500" />
-          Important Information
-        </h4>
-        <div className="space-y-2 text-sm text-gray-300">
-          <p>• Please arrive 10 minutes early for your appointment</p>
-          <p>• 24-hour cancellation policy applies</p>
-          <p>• Payment is due at time of service</p>
-          <p>• Bring any required items as specified for your service</p>
-        </div>
-      </div>
-
-      {bookingError && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-red-400 font-semibold">Booking Failed</p>
-            <p className="text-red-300 text-sm mt-1">{bookingError}</p>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <button
-          onClick={handleBack}
-          className="flex-1 border border-gray-700 bg-gray-800 text-white py-4 rounded-xl font-semibold hover:bg-gray-700 transition-all text-lg"
-        >
-          Back to Date & Time
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="flex-1 bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 disabled:bg-gray-700 disabled:text-gray-500 transition-all hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg text-lg"
-        >
-          {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Creating Booking...
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-5 h-5" />
-              Continue to Payment
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderStep4 = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-serif font-bold text-black mb-2 tracking-tight">Complete Payment</h2>
-        <p className="text-gray-600">Secure your booking with a $30 payment</p>
-      </div>
-
-      {bookingError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-red-800 font-medium">Payment Error</p>
-            <p className="text-red-700 text-sm mt-1">{bookingError}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Booking Summary */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Summary</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-700">Name:</span>
-            <span className="font-medium text-gray-900">{formData.firstName} {formData.lastName}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">Date:</span>
-            <span className="font-medium text-gray-900">{format(formData.appointmentDate, 'MMMM d, yyyy')}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">Time:</span>
-            <span className="font-medium text-gray-900">{formData.selectedTime}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">Services:</span>
-            <span className="font-medium text-gray-900">{selectedServices.map(s => s.name).join(', ')}</span>
-          </div>
-          <div className="border-t border-gray-300 pt-2 mt-2">
-            <div className="flex justify-between text-base">
-              <span className="text-gray-700">Total Service Price:</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(totalPrice)}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold text-black mt-2">
-              <span>Booking Payment:</span>
-              <span>$30.00</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Payment Policy Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-          <AlertCircle className="w-5 h-5" />
-          Payment & Cancellation Policy
-        </h4>
-        <div className="space-y-2 text-sm text-blue-900">
-          <p>• $30 booking payment required to confirm your appointment</p>
-          <p>• Cancel 48+ hours before: Full refund</p>
-          <p>• Cancel 24-48 hours before: 50% refund ($15)</p>
-          <p>• Cancel less than 24 hours: No refund</p>
-          <p>• Remaining balance of {formatCurrency(totalPrice - 30)} due at appointment</p>
-        </div>
-      </div>
-
-      {/* Stripe Payment Form */}
-      {clientSecret && (
-        <Elements 
-          stripe={stripePromise} 
-          options={{
-            clientSecret,
-            appearance: {
-              theme: 'stripe',
-              variables: {
-                colorPrimary: '#000000',
-                colorBackground: '#ffffff',
-                colorText: '#000000',
-                colorDanger: '#dc2626',
-                fontFamily: 'system-ui, sans-serif',
-                borderRadius: '8px',
-              },
-            },
-          }}
-        >
-          <PaymentForm 
-            bookingId={pendingBookingId}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-          />
-        </Elements>
-      )}
-
-      {!clientSecret && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-            <p className="text-gray-600 text-sm">Preparing payment...</p>
-          </div>
-        </div>
-      )}
-
-      <div className="flex justify-center">
-        <button
-          onClick={() => setStep(3)}
-          className="text-gray-600 hover:text-black transition-colors text-sm"
-        >
-          ← Back to Details
-        </button>
-      </div>
-    </div>
-  );
-
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <Link href="/" className="flex items-center text-gray-300 hover:text-white transition-colors">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              <span className="hidden sm:inline font-medium">Back</span>
-              <span className="sm:hidden font-medium">Back</span>
-            </Link>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-              <span className="hidden sm:inline">Book <span className="text-orange-500">Appointment</span></span>
-              <span className="sm:hidden">Book</span>
-            </h1>
-            <Link 
-              href="/instructions" 
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-all hover:scale-105 text-sm flex items-center gap-2"
-            >
-              <AlertCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">View Instructions</span>
-              <span className="sm:hidden">Info</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
+    <div className="max-w-5xl mx-auto">
       {/* Progress Bar */}
-      {step < 5 && (
-        <div className="bg-black border-b border-gray-800">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              {[1, 2, 3, 4].map((stepNumber) => (
-                <div key={stepNumber} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center gap-2">
-                    <span
-                      className={`text-xs font-medium whitespace-nowrap ${
-                        step >= stepNumber ? 'text-white' : 'text-gray-500'
-                      }`}
-                    >
-                      {stepNumber === 1 ? 'Services' : stepNumber === 2 ? 'Date & Time' : stepNumber === 3 ? 'Details' : 'Payment'}
-                    </span>
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
-                        step >= stepNumber
-                          ? 'bg-orange-500 text-black'
-                          : 'bg-gray-800 text-gray-400 border border-gray-700'
-                      }`}
-                    >
-                      {stepNumber}
-                    </div>
+      <div className="mb-12">
+        <div className="flex justify-between items-center mb-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex flex-col items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                step === i ? 'bg-orange-500 text-white scale-110 shadow-lg shadow-orange-500/20' : 
+                step > i ? 'bg-green-500 text-white' : 'bg-zinc-800 text-gray-500'
+              }`}>
+                {step > i ? <CheckCircle className="w-6 h-6" /> : i}
+              </div>
+              <span className={`text-[10px] uppercase tracking-widest mt-2 font-bold ${step === i ? 'text-orange-500' : 'text-gray-500'}`}>
+                {i === 1 ? 'Services' : i === 2 ? 'Details' : i === 3 ? 'Time' : 'Payment'}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-orange-500 transition-all duration-500 ease-out"
+            style={{ width: `${((step - 1) / 3) * 100}%` }}
+          ></div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {/* Main Content */}
+        <div className="lg:col-span-2">
+          {step === 1 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div>
+                <h2 className="text-3xl font-serif font-bold mb-2">Select Services</h2>
+                <p className="text-gray-400">Choose one or more services to book your transformation.</p>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search for services or addons..."
+                  className="w-full bg-zinc-900 border border-gray-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {loading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-32 bg-zinc-900 animate-pulse rounded-2xl"></div>
+                  ))}
+                </div>
+              ) : (
+                <ServiceList 
+                  services={filteredServices}
+                  selectedServices={formData.selectedServices}
+                  selectedAddons={formData.selectedAddons}
+                  onServiceSelect={handleServiceSelect}
+                  onAddonSelect={handleAddonSelect}
+                />
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <h2 className="text-3xl font-serif font-bold mb-2">Your Details</h2>
+                <p className="text-gray-400">Please provide your contact information for the booking.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-400 ml-1">First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                    <input
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      className={`w-full bg-zinc-900 border ${errors.firstName ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
+                      placeholder="Jane"
+                    />
                   </div>
-                  {stepNumber < 4 && (
-                    <div className="flex-1 h-1 bg-gray-800 mx-2 sm:mx-4 rounded self-end mb-5">
-                      <div
-                        className={`h-full rounded transition-all duration-300 ${
-                          step > stepNumber ? 'bg-orange-500 w-full' : 'bg-gray-800 w-0'
-                        }`}
-                      />
+                  {errors.firstName && <p className="text-red-500 text-xs mt-1 ml-1">{errors.firstName}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-400 ml-1">Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                    <input
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      className={`w-full bg-zinc-900 border ${errors.lastName ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
+                      placeholder="Doe"
+                    />
+                  </div>
+                  {errors.lastName && <p className="text-red-500 text-xs mt-1 ml-1">{errors.lastName}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-400 ml-1">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                    <input
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className={`w-full bg-zinc-900 border ${errors.email ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
+                      placeholder="jane@example.com"
+                    />
+                  </div>
+                  {errors.email && <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-400 ml-1">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                    <input
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className={`w-full bg-zinc-900 border ${errors.phone ? 'border-red-500' : 'border-gray-800'} rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all`}
+                      placeholder="(555) 000-0000"
+                    />
+                  </div>
+                  {errors.phone && <p className="text-red-500 text-xs mt-1 ml-1">{errors.phone}</p>}
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-medium text-gray-400 ml-1">Special Notes (Optional)</label>
+                  <div className="relative">
+                    <MessageSquare className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
+                    <textarea
+                      name="notes"
+                      value={formData.notes}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className="w-full bg-zinc-900 border border-gray-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all resize-none"
+                      placeholder="Tell us about any special requirements or preferences..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <h2 className="text-3xl font-serif font-bold mb-2">Choose Date & Time</h2>
+                <p className="text-gray-400">Select your preferred appointment slot.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div className="bg-zinc-900 p-6 rounded-3xl border border-gray-800">
+                  <Calendar
+                    onChange={(val) => setFormData(prev => ({ ...prev, appointmentDate: val as Date, selectedTime: '' }))}
+                    value={formData.appointmentDate}
+                    minDate={startOfToday()}
+                    maxDate={addDays(startOfToday(), 60)}
+                    tileDisabled={({ date }) => isDateBlocked(date)}
+                    className="w-full bg-transparent border-none text-white"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-bold flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-orange-500" />
+                    Available Times for {format(formData.appointmentDate, 'MMM d')}
+                  </h3>
+                  
+                  {loadingSlots ? (
+                    <div className="grid grid-cols-3 gap-3">
+                      {Array.from({ length: 9 }).map((_, i) => (
+                        <div key={i} className="h-12 bg-zinc-900 animate-pulse rounded-xl"></div>
+                      ))}
+                    </div>
+                  ) : availableSlots.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-3">
+                      {availableSlots.map((slot) => (
+                        <button
+                          key={slot.time}
+                          disabled={!slot.available}
+                          onClick={() => setFormData(prev => ({ ...prev, selectedTime: slot.time }))}
+                          className={`py-3 rounded-xl font-bold text-sm transition-all ${
+                            formData.selectedTime === slot.time
+                              ? 'bg-orange-500 text-white'
+                              : slot.available
+                              ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                              : 'bg-zinc-900/50 text-gray-700 cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          {slot.time}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center bg-zinc-900/50 rounded-2xl border border-dashed border-gray-800">
+                      <AlertCircle className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                      <p className="text-gray-500">No available slots for this date.</p>
                     </div>
                   )}
                 </div>
-              ))}
+              </div>
+            </div>
+          )}
+
+          {step === 4 && clientSecret && (
+            <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+              <div>
+                <h2 className="text-3xl font-serif font-bold mb-2">Secure Payment</h2>
+                <p className="text-gray-400">Complete your booking with a secure payment.</p>
+              </div>
+
+              <div className="bg-zinc-900 p-8 rounded-3xl border border-gray-800">
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <PaymentForm 
+                    amount={totalPrice} 
+                    bookingId={pendingBookingId}
+                    paymentIntentId={paymentIntentId}
+                    onSuccess={() => setStep(5)}
+                    onError={setBookingError}
+                  />
+                </Elements>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
+                <CreditCard className="w-6 h-6 text-orange-500" />
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Your payment is processed securely via Stripe. We do not store your card details. A deposit is required to secure your appointment.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {bookingError && (
+            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 animate-in shake duration-500">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-medium">{bookingError}</p>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="mt-12 flex justify-between items-center">
+            {step > 1 && step < 4 && (
+              <button
+                onClick={prevStep}
+                className="flex items-center gap-2 text-gray-400 hover:text-white font-bold transition-all px-6 py-3"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Back
+              </button>
+            ) || <div></div>}
+            
+            {step < 3 ? (
+              <button
+                onClick={nextStep}
+                className="px-10 py-4 bg-white text-black rounded-2xl font-bold hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105 ml-auto flex items-center gap-2"
+              >
+                Continue
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            ) : step === 3 ? (
+              <button
+                disabled={loading}
+                onClick={createInitialBooking}
+                className="px-10 py-4 bg-orange-500 text-white rounded-2xl font-bold hover:bg-orange-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100 ml-auto flex items-center gap-2"
+              >
+                {loading ? 'Initializing...' : 'Proceed to Payment'}
+                {!loading && <CreditCard className="w-5 h-5" />}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Sidebar Summary */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-32 space-y-6">
+            <div className="bg-zinc-900 rounded-3xl border border-gray-800 overflow-hidden">
+              <div className="p-6 bg-orange-500/10 border-b border-gray-800">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-orange-500" />
+                  Booking Summary
+                </h3>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {selectedServices.length > 0 ? (
+                  <div className="space-y-4">
+                    {selectedServices.map(service => (
+                      <div key={service.id} className="group">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold text-sm group-hover:text-orange-500 transition-colors">{service.name}</span>
+                          <span className="text-sm font-medium">{formatCurrency(service.price)}</span>
+                        </div>
+                        {formData.selectedAddons[service.id]?.map(addonId => {
+                          const addon = service.addons?.find(a => a.id === addonId);
+                          return addon ? (
+                            <div key={addonId} className="flex justify-between items-center text-xs text-gray-500 pl-3 border-l border-gray-800 ml-1 mt-1">
+                              <span>+ {addon.name}</span>
+                              <span>{formatCurrency(addon.price)}</span>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm italic text-center py-4">No services selected yet</p>
+                )}
+
+                <div className="pt-6 border-t border-gray-800 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Duration</span>
+                    <span className="font-medium text-gray-300">{formatDuration(totalDuration)}</span>
+                  </div>
+                  {formData.selectedTime && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Appointment</span>
+                      <span className="font-medium text-gray-300">{format(formData.appointmentDate, 'MMM d')} @ {formData.selectedTime}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="font-bold text-lg">Total</span>
+                    <span className="text-2xl font-bold text-orange-500">{formatCurrency(totalPrice)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-zinc-900/50 flex items-center gap-3 border-t border-gray-800">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-gray-500">Live Availability Enabled</span>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-zinc-900/50 border border-gray-800 space-y-4">
+              <h4 className="font-bold text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-orange-500" />
+                Booking Policy
+              </h4>
+              <ul className="space-y-2">
+                <li className="text-[11px] text-gray-500 leading-relaxed">• A non-refundable deposit is required.</li>
+                <li className="text-[11px] text-gray-500 leading-relaxed">• Rescheduling is allowed up to 24h before.</li>
+                <li className="text-[11px] text-gray-500 leading-relaxed">• Please arrive with clean, product-free hair.</li>
+              </ul>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
-        {step === 4 && renderStep4()}
-      </main>
+      </div>
     </div>
   );
 }
 
+const ChevronRight = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+  </svg>
+);
+
 export default function BookPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-          <p className="mt-4 text-gray-400">Loading...</p>
+    <div className="min-h-screen bg-black text-white">
+      <header className="bg-black/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back to Home</span>
+            </Link>
+            <Link href="/" className="flex items-center">
+              <span className="text-2xl font-bold tracking-tight">
+                Laid<span className="text-orange-500">byOma</span>
+              </span>
+            </Link>
+            <div className="w-24"></div> {/* Spacer for symmetry */}
+          </div>
         </div>
-      </div>
-    }>
-      <BookPageContent />
-    </Suspense>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-500 font-medium animate-pulse">Loading booking experience...</p>
+          </div>
+        }>
+          <BookPageContent />
+        </Suspense>
+      </main>
+    </div>
   );
 }
