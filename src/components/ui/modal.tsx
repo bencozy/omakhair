@@ -9,9 +9,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  maxWidth?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-2xl" }: ModalProps) {
   React.useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -38,7 +39,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden"
+            className={`relative w-full ${maxWidth} bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100/50`}
           >
             <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
               <h2 className="text-xl font-serif font-bold text-black">{title}</h2>

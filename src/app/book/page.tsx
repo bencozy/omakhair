@@ -53,29 +53,6 @@ function BookPageContent() {
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
-  const fullyBookedDates = useMemo(() => {
-    if (formData.selectedServices.length === 0) return [];
-    
-    const fullyBooked: string[] = [];
-    const today = startOfToday();
-    
-    for (let i = 0; i < 60; i++) {
-      const date = addDays(today, i);
-      const slots = generateTimeSlots(
-        date, 
-        existingBookings, 
-        formData.selectedServices, 
-        formData.selectedAddons, 
-        services
-      );
-      
-      if (slots.length > 0 && !slots.some(s => s.available)) {
-        fullyBooked.push(date.toDateString());
-      }
-    }
-    return fullyBooked;
-  }, [existingBookings, formData.selectedServices, formData.selectedAddons, services]);
-
 
   // Fetch services and initial data
   useEffect(() => {
@@ -95,7 +72,6 @@ function BookPageContent() {
         if (blockedData.blockedDates) setBlockedDates(blockedData.blockedDates.map((d: any) => new Date(d.date)));
         if (bookingsData.bookings) setExistingBookings(bookingsData.bookings);
 
-        // Pre-select service from URL if any
         const serviceId = searchParams.get('service');
         if (serviceId) {
           setFormData(prev => ({ ...prev, selectedServices: [serviceId] }));
@@ -113,13 +89,8 @@ function BookPageContent() {
   useEffect(() => {
     if (formData.appointmentDate && formData.selectedServices.length > 0) {
       setLoadingSlots(true);
-      const slots = generateTimeSlots(
-        formData.appointmentDate, 
-        existingBookings, 
-        formData.selectedServices, 
-        formData.selectedAddons, 
-        services
-      );
+      const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
+      const slots = generateTimeSlots(formData.appointmentDate, totalDuration, existingBookings);
       setAvailableSlots(slots);
       setLoadingSlots(false);
     }
@@ -138,48 +109,56 @@ function BookPageContent() {
     setFormData(prev => {
       const isSelected = prev.selectedServices.includes(serviceId);
       if (isSelected) {
-        const newSelected = prev.selectedServices.filter(id => id !== serviceId);
-        const newAddons = { ...prev.selectedAddons };
-        delete newAddons[serviceId];
-        return { ...prev, selectedServices: newSelected, selectedAddons: newAddons };
+        const { [serviceId]: _, ...restAddons } = prev.selectedAddons;
+        return {
+          ...prev,
+          selectedServices: prev.selectedServices.filter(id => id !== serviceId),
+          selectedAddons: restAddons
+        };
       } else {
-        return { ...prev, selectedServices: [...prev.selectedServices, serviceId] };
+        return {
+          ...prev,
+          selectedServices: [...prev.selectedServices, serviceId]
+        };
       }
     });
-    if (errors.services) setErrors(prev => ({ ...prev, services: '' }));
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.services;
+      return newErrors;
+    });
   };
 
   const handleAddonToggle = (serviceId: string, addonId: string) => {
     setFormData(prev => {
       const currentAddons = prev.selectedAddons[serviceId] || [];
       const isSelected = currentAddons.includes(addonId);
-      const newAddons = isSelected
-        ? currentAddons.filter(id => id !== addonId)
-        : [...currentAddons, addonId];
       
       return {
         ...prev,
         selectedAddons: {
           ...prev.selectedAddons,
-          [serviceId]: newAddons
+          [serviceId]: isSelected 
+            ? currentAddons.filter(id => id !== addonId)
+            : [...currentAddons, addonId]
         }
       };
     });
   };
 
-  const validateStep = () => {
+  const validateStep = (currentStep: number) => {
     const newErrors: Record<string, string> = {};
     
-    if (step === 1) {
+    if (currentStep === 1) {
       if (formData.selectedServices.length === 0) {
         newErrors.services = 'Please select at least one service.';
       }
-    } else if (step === 2) {
+    } else if (currentStep === 2) {
       if (!formData.selectedTime) newErrors.time = 'Please select an appointment time.';
-      if (!formData.firstName) newErrors.firstName = 'First name is required.';
-      if (!formData.lastName) newErrors.lastName = 'Last name is required.';
-      if (!formData.email || !validateEmail(formData.email)) newErrors.email = 'Valid email is required.';
-      if (!formData.phone || !validatePhone(formData.phone)) newErrors.phone = 'Valid phone is required.';
+      if (!formData.firstName.trim()) newErrors.firstName = 'First name is required.';
+      if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required.';
+      if (!validateEmail(formData.email)) newErrors.email = 'Please enter a valid email.';
+      if (!validatePhone(formData.phone)) newErrors.phone = 'Please enter a valid phone number.';
     }
     
     setErrors(newErrors);
@@ -187,103 +166,63 @@ function BookPageContent() {
   };
 
   const nextStep = async () => {
-    if (validateStep()) {
+    if (validateStep(step)) {
       if (step === 2) {
         setLoading(true);
-        setBookingError('');
         try {
           const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
-          
-          let bookingId = pendingBookingId;
-          
-          if (!bookingId) {
-            // Create pending booking
-            const bookingResponse = await fetch('/api/bookings', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                ...formData,
-                status: 'pending'
-              }),
-            });
-            
-            const bookingResult = await bookingResponse.json();
-            if (bookingResult.success) {
-              bookingId = bookingResult.booking._id;
-              setPendingBookingId(bookingId);
-            } else {
-              throw new Error(bookingResult.error || 'Failed to create booking');
-            }
-          } else {
-            // Update existing pending booking
-            const bookingResponse = await fetch('/api/bookings/' + bookingId, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(formData),
-            });
-            
-            if (!bookingResponse.ok) {
-              const errorData = await bookingResponse.json();
-              throw new Error(errorData.error || 'Failed to update booking');
-            }
-          }
-          
-          // Now create payment intent with the bookingId
           const response = await fetch('/api/payments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              action: 'create-intent',
-              amount: totalAmount,
-              bookingId: bookingId
-            }),
+            body: JSON.stringify({ amount: totalAmount }),
           });
-          
           const data = await response.json();
-          if (data.clientSecret) {
-            setClientSecret(data.clientSecret);
-            setPaymentIntentId(data.paymentIntentId);
-            setStep(3);
-          } else {
-            setBookingError(data.error || 'Failed to initialize payment. Please try again.');
-          }
+          setClientSecret(data.clientSecret);
+          setPaymentIntentId(data.paymentIntentId);
+          setStep(3);
         } catch (error) {
-          setBookingError(error.message || 'An error occurred. Please try again later.');
+          console.error('Error initializing payment:', error);
+          setBookingError('Failed to initialize payment. Please try again.');
         } finally {
           setLoading(false);
         }
       } else {
-        setStep(step + 1);
-        window.scrollTo(0, 0);
+        setStep(prev => prev + 1);
       }
     }
   };
 
   const prevStep = () => {
-    setStep(step - 1);
-    window.scrollTo(0, 0);
+    setStep(prev => prev - 1);
   };
 
   const handlePaymentSuccess = async () => {
     setLoading(true);
     try {
       const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
-      const selectedServiceNames = formData.selectedServices
-        .map(id => services.find(s => s.id === id)?.name)
-        .join(', ');
+      const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
 
-      // Update the existing pending booking to confirmed
-      const response = await fetch('/api/bookings/' + pendingBookingId, {
-        method: 'PATCH',
+      const bookingData = {
+        ...formData,
+        totalAmount,
+        totalDuration,
+        paymentStatus: 'paid',
+        paymentIntentId,
+        status: 'confirmed',
+        createdAt: new Date().toISOString()
+      };
+
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          status: 'confirmed',
-          paymentStatus: 'paid',
-          paymentIntentId
-        }),
+        body: JSON.stringify(bookingData),
       });
 
       if (response.ok) {
+        const selectedServiceNames = formData.selectedServices
+          .map(id => services.find(s => s.id === id)?.name)
+          .join(', ');
+        
         const queryParams = new URLSearchParams({
           firstName: formData.firstName,
           date: format(formData.appointmentDate, 'MMMM d, yyyy'),
@@ -293,13 +232,13 @@ function BookPageContent() {
           email: formData.email
         });
         
-        router.push('/book/success?' + queryParams.toString());
+        router.push(`/book/success?${queryParams.toString()}`);
       } else {
         const errorData = await response.json();
-        setBookingError(errorData.error || 'Failed to update booking. Please contact support.');
+        setBookingError(errorData.error || 'Failed to save booking. Please contact support.');
       }
     } catch (error) {
-      setBookingError('An error occurred while confirming your booking.');
+      setBookingError('An error occurred while saving your booking.');
     } finally {
       setLoading(false);
     }
@@ -324,7 +263,6 @@ function BookPageContent() {
 
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-gray-100">
-      {/* Navbar */}
       <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group text-xs font-bold uppercase tracking-widest">
@@ -336,13 +274,12 @@ function BookPageContent() {
               Laid<span className="text-black">byOma</span>
             </span>
           </div>
-          <div className="w-20" /> {/* Spacer */}
+          <div className="w-20" />
         </div>
       </header>
 
       <main className="pt-32 pb-20">
         <div className="max-w-4xl mx-auto px-6">
-          {/* Progress Steps */}
           <div className="mb-20">
             <div className="flex items-center justify-between relative">
               <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gray-100 -translate-y-1/2 -z-10" />
@@ -361,7 +298,6 @@ function BookPageContent() {
             </div>
           </div>
 
-          {/* Content Sections */}
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div
@@ -383,7 +319,7 @@ function BookPageContent() {
                     placeholder="Search services..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-16 pr-6 py-5 bg-gray-50/50 border border-gray-100 rounded-full text-sm focus:bg-white focus:border-black transition-all outline-none"
+                    className="w-full pl-16 pr-6 py-5 bg-gray-50/50 border border-gray-100 rounded-full text-sm focus:bg-white focus:border-black transition-all outline-none text-black"
                   />
                 </div>
 
@@ -453,62 +389,80 @@ function BookPageContent() {
                     <Modal 
                       isOpen={isCalendarModalOpen} 
                       onClose={() => setIsCalendarModalOpen(false)}
-                      title="Select Date & Time"
+                      title="Select Appointment Date & Time"
+                      maxWidth="max-w-5xl"
                     >
-                      <div className="space-y-12">
-                        <div className="bg-gray-50/50 rounded-[24px] p-4">
-                          <Calendar
-                            onChange={(d) => setFormData(prev => ({ ...prev, appointmentDate: d as Date }))}
-                            value={formData.appointmentDate}
-                            minDate={startOfToday()}
-                            maxDate={addDays(new Date(), 60)}
-                            className="w-full border-none font-sans"
-                            tileDisabled={({ date }) => blockedDates.some(bd => bd.toDateString() === date.toDateString()) || fullyBookedDates.includes(date.toDateString())}
-                          />
-                        </div>
-
-                        <div className="space-y-6">
+                      <div className="flex flex-col md:flex-row gap-12 items-start h-full">
+                        <div className="flex-1 w-full space-y-6">
                           <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-3 px-2">
-                            Available Time Slots
+                            1. Pick a Date
                             <div className="flex-1 h-[1px] bg-gray-100" />
                           </h4>
-                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                            {loadingSlots ? (
-                              Array(8).fill(0).map((_, i) => (
-                                <div key={i} className="h-16 bg-gray-50 rounded-2xl animate-pulse" />
-                              ))
-                            ) : availableSlots.length > 0 ? (
-                              availableSlots.map((slot) => (
-                                <button
-                                  key={slot.time}
-                                  onClick={() => {
-                                    setFormData(prev => ({ ...prev, selectedTime: slot.time }));
-                                    setIsCalendarModalOpen(false);
-                                  }}
-                                  className={`py-5 rounded-2xl text-xs font-bold transition-all duration-300 border-2 ${
-                                    formData.selectedTime === slot.time
-                                      ? 'bg-black text-white border-black shadow-xl -translate-y-1'
-                                      : 'bg-white text-gray-700 hover:border-black border-gray-100'
-                                  }`}
-                                >
-                                  {slot.time}
-                                </button>
-                              ))
-                            ) : (
-                              <div className="col-span-full py-16 text-center text-gray-400 text-sm italic bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
-                                No available times for this date.
-                              </div>
-                            )}
+                          <div className="bg-white/50 rounded-[32px] p-6 border border-gray-50 shadow-sm">
+                            <Calendar
+                              onChange={(d) => setFormData(prev => ({ ...prev, appointmentDate: d as Date }))}
+                              value={formData.appointmentDate}
+                              minDate={startOfToday()}
+                              maxDate={addDays(new Date(), 60)}
+                              className="w-full border-none font-sans"
+                              tileDisabled={({ date }) => blockedDates.some(bd => bd.toDateString() === date.toDateString())}
+                            />
                           </div>
                         </div>
-                        
-                        <div className="flex justify-center">
-                          <button
-                            onClick={() => setIsCalendarModalOpen(false)}
-                            className="px-10 py-4 bg-black text-white rounded-full font-bold uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
-                          >
-                            Confirm Selection
-                          </button>
+
+                        <div className="hidden md:block w-[1px] h-[500px] bg-gray-100 self-center" />
+
+                        <div className="flex-1 w-full space-y-6 flex flex-col h-full">
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-3 px-2">
+                            2. Select a Time
+                            <div className="flex-1 h-[1px] bg-gray-100" />
+                          </h4>
+                          
+                          <div className="flex flex-col gap-8 h-full">
+                            <div className="flex-1 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {loadingSlots ? (
+                                  Array(9).fill(0).map((_, i) => (
+                                    <div key={i} className="h-14 bg-gray-50/80 rounded-2xl animate-pulse" />
+                                  ))
+                                ) : availableSlots.length > 0 ? (
+                                  availableSlots.map((slot) => (
+                                    <button
+                                      key={slot.time}
+                                      onClick={() => {
+                                        setFormData(prev => ({ ...prev, selectedTime: slot.time }));
+                                      }}
+                                      className={`py-4 px-2 rounded-2xl text-[11px] font-bold transition-all duration-300 border-2 ${
+                                        formData.selectedTime === slot.time
+                                          ? 'bg-black text-white border-black shadow-lg -translate-y-0.5'
+                                          : 'bg-white text-gray-600 hover:border-black/30 border-gray-50 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      {slot.time}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="col-span-full py-20 text-center flex flex-col items-center justify-center bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm">
+                                      <Clock className="w-6 h-6 text-gray-300" />
+                                    </div>
+                                    <p className="text-gray-400 text-xs italic font-medium px-4">No available times for this date.</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="pt-6 border-t border-gray-100 mt-auto">
+                              <button
+                                onClick={() => setIsCalendarModalOpen(false)}
+                                disabled={!formData.selectedTime}
+                                className="w-full py-5 bg-black text-white rounded-full font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-30 disabled:hover:scale-100 flex items-center justify-center gap-2 group"
+                              >
+                                {formData.selectedTime ? `Confirm ${formData.selectedTime}` : 'Select a Slot'}
+                                {formData.selectedTime && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </Modal>
@@ -563,7 +517,7 @@ function BookPageContent() {
                           placeholder="(555) 000-0000"
                           value={formData.phone}
                           onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none"
+                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
                         {errors.phone && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.phone}</span>}
                       </div>
@@ -573,7 +527,7 @@ function BookPageContent() {
                           placeholder="Any details you'd like us to know..."
                           value={formData.notes}
                           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none resize-none"
+                          className="w-full p-5 bg-white border border-gray-100 rounded-2xl text-sm focus:border-black transition-all outline-none resize-none text-black"
                           rows={4}
                         />
                       </div>
