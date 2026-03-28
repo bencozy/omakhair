@@ -107,12 +107,21 @@ export default function SignupPage() {
                 </div>
                 <div>
                   <label htmlFor="lastName" className="sr-only">Last Name</label>
+                <div>
+                  <label htmlFor="lastName" className="sr-only">Last Name</label>
                   <input
                     id="lastName"
                     name="lastName"
                     type="text"
                     required
                     className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="referredByCode" className="sr-only">Referral Code (Optional)</label>
                 <div className="relative">
@@ -130,11 +139,6 @@ export default function SignupPage() {
                   />
                 </div>
               </div>
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                  />
-                </div>
               </div>
               <div>
                 <label htmlFor="email" className="sr-only">Email address</label>

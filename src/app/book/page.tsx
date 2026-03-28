@@ -53,6 +53,7 @@ function BookPageContent() {
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [waitlistStatus, setWaitlistStatus] = useState<{ status: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ status: 'idle' });
 
   // Fetch services and initial data
   useEffect(() => {
@@ -72,7 +73,6 @@ function BookPageContent() {
         if (blockedData.blockedDates) setBlockedDates(blockedData.blockedDates.map((d: any) => new Date(d.date)));
         if (bookingsData.bookings) setExistingBookings(bookingsData.bookings);
 
-  const [waitlistStatus, setWaitlistStatus] = useState<{ status: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ status: 'idle' });
         const serviceId = searchParams.get('service');
         if (serviceId) {
           setFormData(prev => ({ ...prev, selectedServices: [serviceId] }));
@@ -131,6 +131,21 @@ function BookPageContent() {
   };
 
   const handleAddonToggle = (serviceId: string, addonId: string) => {
+    setFormData(prev => {
+      const currentAddons = prev.selectedAddons[serviceId] || [];
+      const isSelected = currentAddons.includes(addonId);
+      
+      return {
+        ...prev,
+        selectedAddons: {
+          ...prev.selectedAddons,
+          [serviceId]: isSelected 
+            ? currentAddons.filter(id => id !== addonId)
+            : [...currentAddons, addonId]
+        }
+      };
+    });
+  };
 
   const handleJoinWaitlist = async () => {
     if (!formData.appointmentDate || formData.selectedServices.length === 0) return;
@@ -155,21 +170,6 @@ function BookPageContent() {
     } catch (error) {
       setWaitlistStatus({ status: 'error', message: "Failed to join waitlist. Please try again later." });
     }
-  };
-    setFormData(prev => {
-      const currentAddons = prev.selectedAddons[serviceId] || [];
-      const isSelected = currentAddons.includes(addonId);
-      
-      return {
-        ...prev,
-        selectedAddons: {
-          ...prev.selectedAddons,
-          [serviceId]: isSelected 
-            ? currentAddons.filter(id => id !== addonId)
-            : [...currentAddons, addonId]
-        }
-      };
-    });
   };
 
   const validateStep = (currentStep: number) => {
@@ -490,8 +490,8 @@ function BookPageContent() {
                             </div>
                           </div>
                         </div>
-                      </Modal>
-                    )}
+                      </div>
+                    </Modal>
                   </section>
 
                   <section>
@@ -510,10 +510,40 @@ function BookPageContent() {
                           className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
                         />
                         {errors.firstName && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.firstName}</span>}
-                    <h3 className="text-xl font-serif font-bold text-black border-b border-gray-100 pb-6 mb-8 flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-full bg-nude-peach flex items-center justify-center text-xs">03</div>
-                      Personal Information
-                    </h3>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Last Name</label>
+                        <input
+                          type="text"
+                          placeholder="Doe"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
+                        />
+                        {errors.lastName && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.lastName}</span>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Email Address</label>
+                        <input
+                          type="email"
+                          placeholder="jane@example.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
+                        />
+                        {errors.email && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.email}</span>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-4">Phone Number</label>
+                        <input
+                          type="tel"
+                          placeholder="(555) 000-0000"
+                          value={formData.phone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-sm focus:border-black transition-all outline-none text-black"
+                        />
+                        {errors.phone && <span className="text-red-500 text-[10px] ml-4 font-bold uppercase">{errors.phone}</span>}
+                      </div>
                       <div className="sm:col-span-2 space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-4">Special Instructions (Optional)</label>
                         <textarea
