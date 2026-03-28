@@ -32,14 +32,14 @@ export default function LoginPage() {
         throw new Error(data.message || 'Login failed');
       }
 
-      if (data.user.role !== 'admin') {
-        throw new Error('Access denied. Admin privileges required.');
-      }
-
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      router.push('/admin');
+      if (data.user.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/portal');
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred during login');
     } finally {
