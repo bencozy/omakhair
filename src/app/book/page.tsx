@@ -197,18 +197,47 @@ function BookPageContent() {
         setLoading(true);
         try {
           const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
+          const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
+
+          // 1. Create a pending booking first to get a bookingId
+          const bookingResponse = await fetch('/api/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              ...formData,
+              totalAmount,
+              totalDuration,
+              paymentStatus: 'unpaid',
+              status: 'pending'
+            }),
+          });
+          
+          const bookingData = await bookingResponse.json();
+          if (!bookingResponse.ok) throw new Error(bookingData.error || 'Failed to create booking');
+          
+          const bookingId = bookingData.booking.id;
+          setPendingBookingId(bookingId);
+
+          // 2. Initialize payment with the bookingId
           const response = await fetch('/api/payments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: totalAmount }),
+            body: JSON.stringify({ 
+              action: 'create-intent',
+              amount: totalAmount,
+              bookingId: bookingId
+            }),
           });
+          
           const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Failed to initialize payment');
+          
           setClientSecret(data.clientSecret);
           setPaymentIntentId(data.paymentIntentId);
           setStep(3);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error initializing payment:', error);
-          setBookingError('Failed to initialize payment. Please try again.');
+          setBookingError(error.message || 'Failed to initialize payment. Please try again.');
         } finally {
           setLoading(false);
         }
@@ -226,22 +255,16 @@ function BookPageContent() {
     setLoading(true);
     try {
       const totalAmount = calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services);
-      const totalDuration = calculateTotalDuration(formData.selectedServices, formData.selectedAddons, services);
 
-      const bookingData = {
-        ...formData,
-        totalAmount,
-        totalDuration,
-        paymentStatus: 'paid',
-        paymentIntentId,
-        status: 'confirmed',
-        createdAt: new Date().toISOString()
-      };
-
-      const response = await fetch('/api/bookings', {
+      // Confirm payment on backend
+      const response = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData),
+        body: JSON.stringify({ 
+          action: 'confirm',
+          paymentIntentId,
+          bookingId: pendingBookingId
+        }),
       });
 
       if (response.ok) {
@@ -257,7 +280,6 @@ function BookPageContent() {
           total: formatCurrency(totalAmount),
           email: formData.email
         });
-        
         router.push(`/book/success?${queryParams.toString()}`);
       } else {
         const errorData = await response.json();
@@ -619,12 +641,21 @@ function BookPageContent() {
 
                 <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
                   <div className="max-w-md mx-auto">
-                    <Elements stripe={stripePromise} options={{ clientSecret }}>
-                      <PaymentForm 
-                        onSuccess={handlePaymentSuccess} 
-                        amount={calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services)}
-                      />
-                    </Elements>
+                    {clientSecret && (
+                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <PaymentForm 
+                          bookingId={pendingBookingId}
+                          onSuccess={handlePaymentSuccess} 
+                          amount={calculateTotalPrice(formData.selectedServices, formData.selectedAddons, services)}
+                        />
+                      </Elements>
+                    )}
+                    {!clientSecret && (
+                      <div className="flex flex-col items-center justify-center py-12">
+                        <div className="w-10 h-10 border-4 border-nude-peach border-t-transparent rounded-full animate-spin mb-4" />
+                        <p className="text-gray-500 font-medium">Preparing secure checkout...</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

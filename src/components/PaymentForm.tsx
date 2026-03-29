@@ -10,7 +10,7 @@ import { AlertCircle, CreditCard, Lock, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface PaymentFormProps {
-  bookingId: string;
+  bookingId?: string;
   onSuccess: () => void;
   onError?: (error: string) => void;
   amount: number;
