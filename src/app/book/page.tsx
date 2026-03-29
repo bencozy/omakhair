@@ -215,7 +215,7 @@ function BookPageContent() {
           const bookingData = await bookingResponse.json();
           if (!bookingResponse.ok) throw new Error(bookingData.error || 'Failed to create booking');
           
-          const bookingId = bookingData.booking.id;
+          const bookingId = bookingData.booking.id || bookingData.booking._id;
           setPendingBookingId(bookingId);
 
           // 2. Initialize payment with the bookingId
